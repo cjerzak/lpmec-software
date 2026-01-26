@@ -35,8 +35,8 @@ library(lpmec)
 data(KnowledgeVoteDuty)
 
 # Run correction with bootstrap
-results <- lpmec(Y = KnowledgeVoteDuty$VoteDuty,
-                 observables = as.matrix(KnowledgeVoteDuty[, 1:5]),
+results <- lpmec(Y = KnowledgeVoteDuty$voteduty,
+                 observables = as.matrix(KnowledgeVoteDuty[, 2:5]),
                  n_boot = 50)
 
 print(results)

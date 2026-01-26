@@ -98,7 +98,3 @@ The `lpmec` package provides robust measurement error correction through:
   - Flexible estimation backends (EM, MCMC)
 
 Refer to package documentation for advanced configuration options.
-
-<!--
- install.packages( "~/Documents/lpmec-software/lpmec", repos = NULL, type = "source",force = FALSE)
--->
