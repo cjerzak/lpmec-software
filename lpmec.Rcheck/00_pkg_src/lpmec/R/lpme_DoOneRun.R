@@ -9,6 +9,7 @@
 #' @param estimation_method Character specifying the estimation approach. Options include:
 #' \itemize{
 #' \item "em" (default): Uses expectation-maximization via \code{emIRT} package. Supports both binary (via \code{emIRT::binIRT}) and ordinal (via \code{emIRT::ordIRT}) indicators.
+#' \item "pca": First principal component of observables.
 #' \item "averaging": Uses feature averaging.
 #' \item "mcmc": Markov Chain Monte Carlo estimation using either \code{pscl::ideal} (R backend) or \code{numpyro} (Python backend)
 #' \item "mcmc_joint": Joint Bayesian model that simultaneously estimates latent variables and outcome relationship using \code{numpyro}
@@ -45,16 +46,22 @@
 #'   \item \code{ols_coef}: Coefficient from naive OLS regression
 #'   \item \code{ols_se}: Standard error of naive OLS coefficient
 #'   \item \code{ols_tstat}: T-statistic of naive OLS coefficient
-#'   \item \code{corrected_ols_coef}: OLS coefficient corrected for measurement error
+#'   \item \code{iv_coef_a}: IV coefficient using first split as instrument
+#'   \item \code{iv_coef_b}: IV coefficient using second split as instrument
+#'   \item \code{iv_coef}: Averaged IV coefficient from both splits
+#'   \item \code{iv_se}: Standard error of IV regression coefficient
+#'   \item \code{iv_tstat}: T-statistic of IV regression coefficient
+#'   \item \code{corrected_iv_coef_a}: Corrected IV coefficient using first split as instrument
+#'   \item \code{corrected_iv_coef_b}: Corrected IV coefficient using second split as instrument
+#'   \item \code{corrected_iv_coef}: Averaged corrected IV coefficient from both splits
+#'   \item \code{corrected_iv_se}: Standard error of corrected IV coefficient
+#'   \item \code{corrected_iv_tstat}: T-statistic of corrected IV coefficient
+#'   \item \code{corrected_ols_coef_a}: Corrected OLS coefficient using first split
+#'   \item \code{corrected_ols_coef_b}: Corrected OLS coefficient using second split
+#'   \item \code{corrected_ols_coef}: Averaged corrected OLS coefficient from both splits
 #'   \item \code{corrected_ols_se}: Standard error of corrected OLS coefficient (currently NA)
 #'   \item \code{corrected_ols_tstat}: T-statistic of corrected OLS coefficient (currently NA)
 #'   \item \code{corrected_ols_coef_alt}: Alternative corrected OLS coefficient (currently NA)
-#'   \item \code{iv_coef}: Coefficient from instrumental variable regression
-#'   \item \code{iv_se}: Standard error of IV regression coefficient
-#'   \item \code{iv_tstat}: T-statistic of IV regression coefficient
-#'   \item \code{corrected_iv_coef}: IV regression coefficient corrected for measurement error
-#'   \item \code{corrected_iv_se}: Standard error of corrected IV coefficient
-#'   \item \code{corrected_iv_tstat}: T-statistic of corrected IV coefficient
 #'   \item \code{var_est_split}: Estimated variance of the measurement error
 #'   \item \code{x_est1}: First set of latent variable estimates
 #'   \item \code{x_est2}: Second set of latent variable estimates

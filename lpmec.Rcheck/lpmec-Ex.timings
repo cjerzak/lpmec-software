@@ -2,5 +2,5 @@ name	user	system	elapsed
 KnowledgeVoteDuty	0.006	0.001	0.007	
 build_backend	0	0	0	
 infer_orientation_signs	0.001	0.000	0.001	
-lpmec	8.787	0.070	8.999	
-lpmec_onerun	0.140	0.001	0.142	
+lpmec	8.189	0.058	8.599	
+lpmec_onerun	0.128	0.001	0.128	

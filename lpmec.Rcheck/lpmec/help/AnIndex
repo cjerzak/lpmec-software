@@ -3,3 +3,9 @@ infer_orientation_signs	infer_orientation_signs
 KnowledgeVoteDuty	KnowledgeVoteDuty
 lpmec	lpmec
 lpmec_onerun	lpmec_onerun
+plot.lpmec	plot.lpmec
+plot.lpmec_onerun	plot.lpmec_onerun
+print.lpmec	print.lpmec
+print.lpmec_onerun	print.lpmec_onerun
+summary.lpmec	summary.lpmec
+summary.lpmec_onerun	summary.lpmec_onerun

@@ -11,3 +11,9 @@ infer_orientation_signs
                         indicator
 lpmec                   lpmec
 lpmec_onerun            lpmec_onerun
+plot.lpmec              Plot method for lpmec objects
+plot.lpmec_onerun       Plot method for lpmec_onerun objects
+print.lpmec             Print method for lpmec objects
+print.lpmec_onerun      Print method for lpmec_onerun objects
+summary.lpmec           Summary method for lpmec objects
+summary.lpmec_onerun    Summary method for lpmec_onerun objects
