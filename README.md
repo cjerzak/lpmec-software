@@ -48,7 +48,7 @@ print(results)
 
 ## Optional: NumPyro Backend for MCMC
 
-For advanced MCMC estimation, `lpmec` supports the NumPyro backend via Python. This is optional; the default `pscl` backend works without any Python setup.
+For advanced MCMC estimation, `lpmec` supports the NumPyro backend via Python. NumPyro leverages JAX’s automatic differentiation and JIT/XLA compilation (including optional GPU/TPU execution), which can make HMC/NUTS sampling faster and easier to parallelize than CPU-only MCMC backends. This is optional; the default `pscl` backend works without any Python setup.
 
 To use the NumPyro backend:
 
