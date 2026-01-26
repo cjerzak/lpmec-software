@@ -2,6 +2,7 @@ Package: lpmec
 Title: Measurement Error Analysis and Correction Under Identification
         Restrictions
 Version: 1.1.4
+Author: Connor Jerzak [aut, cre], Stephen Jessee [aut]
 Authors@R: c(
     person("Connor", "Jerzak", email = "connor.jerzak@gmail.com", role = c("aut", "cre")),
     person("Stephen", "Jessee", email = "sjessee@austin.utexas.edu", role = c("aut"))
@@ -28,7 +29,5 @@ RoxygenNote: 7.3.3
 URL: https://github.com/cjerzak/lpmec-software
 BugReports: https://github.com/cjerzak/lpmec-software/issues
 NeedsCompilation: no
-Packaged: 2026-01-08 00:50:36 UTC; cjerzak
-Author: Connor Jerzak [aut, cre],
-  Stephen Jessee [aut]
-Built: R 4.5.2; ; 2026-01-08 00:50:47 UTC; unix
+Packaged: 2026-01-26 23:08:05 UTC; cjerzak
+Built: R 4.5.2; ; 2026-01-26 23:08:17 UTC; unix

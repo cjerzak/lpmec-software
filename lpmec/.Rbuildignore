@@ -3,6 +3,7 @@
 ^\.Rapp\.history$
 ^data/\.Rapp\.history$
 ^vignettes/.*\.html$
+^\\.\\.Rcheck$
 ^\.git$
 ^\.github$
 ^.*\.Rproj$
