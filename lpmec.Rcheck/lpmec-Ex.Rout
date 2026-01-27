@@ -270,7 +270,7 @@ Use summary() for detailed results.
 > cleanEx()
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  9.047 0.093 9.528 0 0 
+Time elapsed:  15.643 0.129 15.833 0 0 
 > grDevices::dev.off()
 null device 
           1 

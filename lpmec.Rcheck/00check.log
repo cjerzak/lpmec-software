@@ -10,7 +10,7 @@
 * checking for file ‘lpmec/DESCRIPTION’ ... OK
 * this is package ‘lpmec’ version ‘1.1.4’
 * package encoding: UTF-8
-* checking CRAN incoming feasibility ... NOTE
+* checking CRAN incoming feasibility ... [3s/12s] NOTE
 Maintainer: ‘Connor Jerzak <connor.jerzak@gmail.com>’
 
 New submission
@@ -29,7 +29,8 @@ Please refer to arXiv e-prints via their arXiv DOI <doi:10.48550/arXiv.YYMM.NNNN
 * checking whether package ‘lpmec’ can be installed ... OK
 * checking installed package size ... OK
 * checking package directory ... OK
-* checking for future file timestamps ... OK
+* checking for future file timestamps ... NOTE
+unable to verify current time
 * checking ‘build’ directory ... OK
 * checking DESCRIPTION meta-information ... OK
 * checking top-level files ... OK
@@ -64,16 +65,16 @@ Please refer to arXiv e-prints via their arXiv DOI <doi:10.48550/arXiv.YYMM.NNNN
 * checking installed files from ‘inst/doc’ ... OK
 * checking files in ‘vignettes’ ... OK
 * checking examples ... OK
-* checking examples with --run-donttest ... OK
+* checking examples with --run-donttest ... [16s/16s] OK
 * checking for unstated dependencies in ‘tests’ ... OK
 * checking tests ... OK
   Running ‘testthat.R’
 * checking for unstated dependencies in vignettes ... OK
 * checking package vignettes ... OK
-* checking re-building of vignette outputs ... [10s/11s] OK
+* checking re-building of vignette outputs ... [18s/18s] OK
 * checking PDF version of manual ... OK
 * checking HTML version of manual ... OK
 * checking for non-standard things in the check directory ... OK
 * checking for detritus in the temp directory ... OK
 * DONE
-Status: 1 NOTE
+Status: 2 NOTEs

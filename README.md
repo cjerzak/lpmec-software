@@ -1,12 +1,9 @@
 # `lpmec`: R Package for Dealing with Latent Predictor Measurement Error Under Identification Restrictions
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 [<img src="https://img.shields.io/badge/Demo-View%20Demo-blue" alt="Demo Button">](https://github.com/cjerzak/lpmec-software/blob/main/lpmec/vignettes/IntroVignette.Rmd)
 
-[**Installation**](#installation)
-| [**Key Functions**](#keyfxns)
-| [**References**](#references)
+[**Installation**](#installation) | [**Key Functions**](#keyfxns) | [**References**](#references)
 
 `lpmec` is an R package that provides tools for analyzing latent variable models with measurement error correction, using bootstrapping techniques for inference.
 
@@ -26,7 +23,7 @@ Within an `R` session, you can install the development version of `lpmec` from G
 ```
 # Install from GitHub
 # install.packages("devtools")
-devtools::install_github("cjerzak/lpmec-software/lpmec")
+devtools::install_github("cjerzak/lpmec-software", subdir = "lpmec")
 ```
 
 ## Quick Start

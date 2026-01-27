@@ -1,6 +1,6 @@
 ## ----setup, eval=FALSE--------------------------------------------------------
 # # Install lpmec from source (replace with appropriate installation method)
-# # devtools::install_github("cjerzak/lpmec-software/lpmec")
+# # devtools::install_github("cjerzak/lpmec-software", subdir = "lpmec")
 
 ## ----eval=TRUE----------------------------------------------------------------
 set.seed(123)
