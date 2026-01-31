@@ -50,21 +50,21 @@ The correlation-corrected estimates closely track the performance of the computa
 ### Bias \& Variance 
 
 <a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
-  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2.webp#gh-light-mode-only" alt="Figure – light" width="300">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2.webp#gh-light-mode-only" alt="Figure – light" width="400">
 </a>
 
 <a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
-  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2.dark.webp#gh-dark-mode-only" alt="Figure – dark" width="300">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="400">
 </a>
 
 ### Coverage 
 
 <a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
-  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5.webp#gh-light-mode-only" alt="Figure – light" width="200">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5.webp#gh-light-mode-only" alt="Figure – light" width="300">
 </a>
 
 <a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
-  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="200">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="300">
 </a>
 
 
