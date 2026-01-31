@@ -45,7 +45,7 @@ print(results)
 
 ## Results
 
-The correlation-corrected estimates closely track the performance of the computationally intensive full Bayesian joint estimation, providing good results regardless of the sample size (N) or number of indicators (M). 
+The correlation-corrected estimates computed here by `lpmec` closely track the performance of the computationally intensive full Bayesian joint estimation, providing good results regardless of the sample size (N) or number of indicators (M). 
 
 ### Bias \& Variance 
 
