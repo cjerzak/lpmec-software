@@ -43,6 +43,29 @@ print(results)
 # Corrected Coefficient: X.XXX (SE: X.XXX)
 ```
 
+## Results
+
+The correlation-corrected estimates closely track the performance of the computationally intensive full Bayesian joint estimation, providing good results regardless of the sample size (N) or number of indicators (M). 
+
+<a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p3.webp#gh-light-mode-only" alt="Figure – light" width="600">
+</a>
+
+<a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p3_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="600">
+</a>
+
+<a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5.webp#gh-light-mode-only" alt="Figure – light" width="600">
+</a>
+
+<a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
+  <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="600">
+</a>
+
+
+
+
 ## Optional: NumPyro Backend for MCMC
 
 For advanced MCMC estimation, `lpmec` supports the NumPyro backend via Python. NumPyro leverages JAX’s automatic differentiation and JIT/XLA compilation (including optional GPU/TPU execution), which can make HMC/NUTS sampling faster and easier to parallelize than CPU-only MCMC backends. This is optional; the default `pscl` backend works without any Python setup.
