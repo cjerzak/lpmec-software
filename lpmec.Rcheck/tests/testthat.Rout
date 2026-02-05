@@ -23,11 +23,11 @@ Type 'q()' to quit R.
 
 ══ Skipped tests (7) ═══════════════════════════════════════════════════════════
 • On CRAN (7): 'test_bootstrap.R:4:1', 'test_estimation_methods.R:4:1',
-  'test_input_validation.R:4:1', 'test_lpme_onerun.R:2:1', 'test_lpme.R:2:1',
+  'test_input_validation.R:4:1', 'test_lpme.R:2:1', 'test_lpme_onerun.R:2:1',
   'test_orientation_helper.R:2:1', 'test_real_data.R:4:1'
 
 [ FAIL 0 | WARN 0 | SKIP 7 | PASS 0 ]
 > 
 > proc.time()
    user  system elapsed 
-  0.464   0.042   0.506 
+  0.727   0.072   0.797 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.4.5)  5 FEB 2026 09:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.4.5)  5 FEB 2026 11:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -347,8 +347,8 @@ File: l3backend-pdftex.def 2024-02-20 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count294
 \l__pdf_internal_box=\box58
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.aux)
 \openout1 = `Rd2.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 8.
@@ -386,10 +386,10 @@ LaTeX Font Info:    ... okay on input line 8.
 )
 Package hyperref Info: Link coloring ON on input line 8.
 
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.out)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.out)
 \@outlinefile=\write4
 \openout4 = `Rd2.out'.
 
@@ -401,26 +401,26 @@ File: t1zi4.fd 2018/01/14 T1/zi4 (Inconsolata)
 )
 LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
 (Font)              scaled to size 10.0pt on input line 34.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 41.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 43.
 
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 41.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 43.
 
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-LaTeX Font Info:    Trying to load font information for U+rsfs on input line 41
+LaTeX Font Info:    Trying to load font information for U+rsfs on input line 43
 .
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/jknapltx/ursfs.fd
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.toc [1
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.toc [1
 
 
 {/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
@@ -430,99 +430,99 @@ al/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr/local/texlive/2024
 \openout5 = `Rd2.toc'.
 
 LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
-(Font)              scaled to size 9.0pt on input line 76.
+(Font)              scaled to size 9.0pt on input line 78.
 
 [2] [3] [4]
-Overfull \hbox (24.73999pt too wide) in paragraph at lines 198--198
+Overfull \hbox (24.73999pt too wide) in paragraph at lines 200--200
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
  []
 
 
-Overfull \hbox (15.20741pt too wide) in paragraph at lines 223--224
+Overfull \hbox (15.20741pt too wide) in paragraph at lines 225--226
 []\T1/ptm/m/n/10 Vector of in-dices or group-ing vari-able for strat-i-fied boo
 t-strap. De-fault is 1:length(Y). 
  []
 
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 2
-32.
+34.
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 238--239
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 240--241
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
  []
 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 243--244
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 245--246
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
  []
 
 [5]
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 248--251
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 250--253
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
  []
 
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 255--258
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 257--260
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
  []
 
 [6]
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 305--306
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 307--308
 []\T1/zi4/m/n/10 bayesian_ols_se_outer_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_outer_norm
 ed[]\T1/ptm/m/n/10 . 
  []
 
 
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 309--310
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 311--312
 []\T1/zi4/m/n/10 bayesian_ols_se_inner_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_inner_norm
 ed[]\T1/ptm/m/n/10 . 
  []
 
 [7]
-Overfull \hbox (24.73999pt too wide) in paragraph at lines 362--362
+Overfull \hbox (24.73999pt too wide) in paragraph at lines 364--364
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
  []
 
 
-Overfull \hbox (21.39984pt too wide) in paragraph at lines 363--363
+Overfull \hbox (21.39984pt too wide) in paragraph at lines 365--365
  []    \T1/zi4/m/n/10 batch_size = 512L, chain_method = "parallel", subsample_m
 ethod = "full", n_thin_by =[] 
  []
 
 
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 391--392
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 393--394
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
  []
 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 396--397
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 398--399
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
  []
 
 [8]
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 401--404
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 403--406
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
  []
 
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 408--411
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 410--413
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
@@ -530,22 +530,22 @@ m/n/10 "vectorized"[]\T1/ptm/m/n/10 .
 
 [9]
 LaTeX Font Info:    Trying to load font information for TS1+zi4 on input line 5
-10.
+12.
  (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/ts1zi4.fd
 File: ts1zi4.fd 2018/01/14 TS1/zi4 (Inconsolata)
 )
 LaTeX Font Info:    Font shape `TS1/zi4/m/n' will be
-(Font)              scaled to size 10.0pt on input line 510.
+(Font)              scaled to size 10.0pt on input line 512.
 
 [10] [11{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.
 enc}] [12] [13]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.ind [14] [15
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.ind [14] [15
 
 
 ])
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmplOpst9/Rd2pdfb346
-77126e7b/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpvL5Oc2/Rd2pdfd92d
+44906b08/Rd2.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
@@ -574,7 +574,7 @@ zi4r.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><
 /usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local
 /texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2
 024/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on Rd2.pdf (15 pages, 111311 bytes).
+Output written on Rd2.pdf (15 pages, 111547 bytes).
 PDF statistics:
  320 PDF objects out of 1000 (max. 8388607)
  289 compressed objects within 3 object streams
