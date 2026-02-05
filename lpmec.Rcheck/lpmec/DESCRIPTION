@@ -10,11 +10,11 @@ Authors@R: c(
 Description: Implements methods for analyzing latent variable models with measurement
     error correction, including Item Response Theory (IRT) models. Provides tools for
     various correction methods such as Bayesian Markov Chain Monte Carlo (MCMC),
-    overimputation, bootstrapping for robust standard errors, Ordinary Least Squares
+    over-imputation, bootstrapping for robust standard errors, Ordinary Least Squares
     (OLS), and Instrumental Variables (IV) based approaches. Supports flexible
     specification of observable indicators and groupings for latent variable analyses
-    in social sciences and other fields. Methods are described in Jerzak and Jessee
-    (2025) <https://arxiv.org/abs/2507.22218>.
+    in social sciences and other fields. Methods are described in a working paper
+    (2025) <doi:10.48550/arXiv.2507.22218>.
 Depends: R (>= 3.5.0)
 License: GPL-3
 Encoding: UTF-8
@@ -29,5 +29,5 @@ RoxygenNote: 7.3.3
 URL: https://github.com/cjerzak/lpmec-software
 BugReports: https://github.com/cjerzak/lpmec-software/issues
 NeedsCompilation: no
-Packaged: 2026-01-27 18:58:57 UTC; cjerzak
-Built: R 4.5.2; ; 2026-01-27 18:59:10 UTC; unix
+Packaged: 2026-02-05 15:40:27 UTC; cjerzak
+Built: R 4.5.2; ; 2026-02-05 15:40:44 UTC; unix

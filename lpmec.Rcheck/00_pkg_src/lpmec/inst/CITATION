@@ -23,6 +23,6 @@ bibentry(
   eprint = "2507.22218",
   archiveprefix = "arXiv",
   primaryclass = "stat.AP",
-  url = "https://arxiv.org/abs/2507.22218",
+  doi = "10.48550/arXiv.2507.22218",
   note = "arXiv:2507.22218 [stat.AP]"
 )

@@ -1,6 +1,3 @@
-KnowledgeVoteDuty       KnowledgeVoteDuty: Survey Respondents' Views of
-                        Voting as a Duty and Political Knowledge
-                        Questions
 build_backend           A function to build the environment for lpmec.
                         Builds a conda environment in which 'JAX',
                         'numpyro', and 'numpy' are installed. Users can
@@ -9,6 +6,9 @@ build_backend           A function to build the environment for lpmec.
 infer_orientation_signs
                         Infer orientation signs for each observable
                         indicator
+KnowledgeVoteDuty       KnowledgeVoteDuty: Survey Respondents' Views of
+                        Voting as a Duty and Political Knowledge
+                        Questions
 lpmec                   lpmec
 lpmec_onerun            lpmec_onerun
 plot.lpmec              Plot method for lpmec objects
