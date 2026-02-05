@@ -34,6 +34,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
+SystemRequirements: Python (>= 3.10) with jax, numpy, numpyro (optional; for
+    NumPyro backend via reticulate)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
