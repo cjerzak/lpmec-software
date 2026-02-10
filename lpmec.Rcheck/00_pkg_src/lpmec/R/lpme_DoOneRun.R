@@ -230,6 +230,15 @@ lpmec_onerun <- function(Y,
     stop("mcmc_control$n_chains must be a positive integer.")
   }
 
+  # coerce to data.frame (before groupings check so matrix inputs get column names)
+  observables <- as.data.frame( observables )
+
+  # If observables_groupings is NULL (e.g., matrix input with no colnames),
+  # fall back to column names of the coerced data.frame
+  if (is.null(observables_groupings)) {
+    observables_groupings <- colnames(observables)
+  }
+
   # Warn about potential issues
   n_unique_obs <- length(unique(observables_groupings))
   if (n_unique_obs < 4) {
@@ -245,9 +254,6 @@ lpmec_onerun <- function(Y,
   }
 
   # ============================================================================
-
-  # coerce to data.frame
-  observables <- as.data.frame( observables )
   
   t0 <- Sys.time()
   INIT_SCALER <- 1/10

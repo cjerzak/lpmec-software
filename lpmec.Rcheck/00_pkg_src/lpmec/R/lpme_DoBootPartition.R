@@ -212,6 +212,15 @@ lpmec <- function(Y,
     stop("'return_intermediaries' must be a single logical value (TRUE or FALSE).")
   }
 
+  # coerce to data.frame (before groupings check so matrix inputs get column names)
+  observables <- as.data.frame( observables )
+
+  # If observables_groupings is NULL (e.g., matrix input with no colnames),
+  # fall back to column names of the coerced data.frame
+  if (is.null(observables_groupings)) {
+    observables_groupings <- colnames(observables)
+  }
+
   # Check for excessive missing data (warning only)
   na_prop <- mean(is.na(as.matrix(observables)))
   if (na_prop > 0.5) {
@@ -227,9 +236,6 @@ lpmec <- function(Y,
   }
 
   # ============================================================================
-
-  # coerce to data.frame
-  observables <- as.data.frame( observables )
 
   # Orient the observables if orientation_signs are provided
   if (!is.null(orientation_signs)) {
