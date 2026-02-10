@@ -1,4 +1,4 @@
-# `lpmec`: R Package for Dealing with Latent Predictor Measurement Error Under Identification Restrictions
+# `lpmec`: Measurement Error Analysis and Correction under Identification Restrictions 
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [<img src="https://img.shields.io/badge/Demo-View%20Demo-blue" alt="Demo Button">](https://github.com/cjerzak/lpmec-software/blob/main/lpmec/vignettes/IntroVignette.Rmd) [<img src="https://img.shields.io/badge/CRAN-View%20on%20CRAN-green" alt="CRAN Button">](https://cran.r-project.org/package=lpmec)
 
 [**Installation**](#installation) | [**Key Functions**](#keyfxns) | [**References**](#references)
@@ -6,7 +6,7 @@
 `lpmec` is an R package that provides tools for analyzing latent variable models with measurement error correction, using bootstrapping techniques for inference.
 
 ## Overview
-Measurement error in latent predictors (e.g., ideology scores from survey responses, ability measures from test items) causes **attenuation bias** in regression coefficients—systematically biasing estimates toward zero.
+Measurement error in latent predictors (e.g., ideology scores from survey responses, ability measures from test items) causes attenuation bias in regression coefficients—systematically biasing estimates toward zero.
 
 `lpmec` implements split-sample instrumental variables and OLS correction methods to obtain consistent estimates when your predictor is measured with error.
 
