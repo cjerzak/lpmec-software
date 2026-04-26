@@ -198,3 +198,37 @@ test_that("lpmec errors on invalid return_intermediaries", {
     "'return_intermediaries' must be a single logical"
   )
 })
+
+test_that("lpmec errors on invalid partition_aggregation", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
+          partition_aggregation = "mean"),
+    "'partition_aggregation' must be one of"
+  )
+})
+
+test_that("lpmec errors on invalid partition_aggregation_probs", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
+          partition_aggregation = "winsorized_mean",
+          partition_aggregation_probs = c(0.99, 0.01)),
+    "'partition_aggregation_probs' must be a numeric vector of length 2"
+  )
+})
+
+test_that("lpmec errors when custom partition_aggregation is not scalar numeric", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec(Y, obs, n_boot = 1, n_partition = 2, estimation_method = "pca",
+          partition_aggregation = function(x) c(mean(x), stats::median(x))),
+    "'partition_aggregation' must return a single numeric value"
+  )
+})
