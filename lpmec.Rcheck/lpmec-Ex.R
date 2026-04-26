@@ -119,6 +119,13 @@ results <- lpmec(Y = Y,
                  n_partition = 5 # small for size
                  )
 
+# Use a winsorized mean across partitions
+results_winsorized <- lpmec(Y = Y,
+                            observables = observables,
+                            n_boot = 10,
+                            n_partition = 5,
+                            partition_aggregation = "winsorized_mean")
+
 # View the corrected IV coefficient and its standard error
 print(results)
 ## End(No test)

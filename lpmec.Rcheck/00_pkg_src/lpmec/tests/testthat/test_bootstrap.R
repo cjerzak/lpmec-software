@@ -7,6 +7,35 @@ skip_on_cran()
 # BOOTSTRAP AGGREGATION TESTS
 # ==============================================================================
 
+test_that("partition aggregation helpers implement built-in strategies", {
+  median_fxn <- lpmec:::.lpmec_resolve_partition_aggregation("median", c(0.01, 0.99))
+  expect_equal(median_fxn(c(1, 2, 100)), stats::median(c(1, 2, 100)))
+
+  x <- c(1, 2, 3, 100)
+  winsor_fxn <- lpmec:::.lpmec_resolve_partition_aggregation(
+    "winsorized_mean",
+    c(0.25, 0.75)
+  )
+  winsor_bounds <- stats::quantile(x, probs = c(0.25, 0.75), names = FALSE)
+  expect_equal(
+    winsor_fxn(x),
+    mean(pmin(pmax(x, winsor_bounds[1]), winsor_bounds[2]))
+  )
+  expect_true(is.na(winsor_fxn(c(1, NA_real_, 100))))
+
+  trimmed_fxn <- lpmec:::.lpmec_resolve_partition_aggregation(
+    "trimmed_mean",
+    c(0.25, 0.75)
+  )
+  expect_equal(trimmed_fxn(x), 2.5)
+
+  custom_fxn <- lpmec:::.lpmec_resolve_partition_aggregation(
+    function(values) max(values) - min(values),
+    c(0.01, 0.99)
+  )
+  expect_equal(custom_fxn(c(1, 4, 10)), 9)
+})
+
 test_that("lpmec bootstrap aggregation works with n_boot > 1", {
   set.seed(123)
   Y <- rnorm(80)
@@ -95,4 +124,40 @@ test_that("lpmec var_est_split is computed correctly", {
   expect_true("var_est_split" %in% names(res))
   # It should be numeric (could be NA in edge cases)
   expect_true(is.numeric(res$var_est_split) || is.na(res$var_est_split))
+})
+
+test_that("lpmec default partition aggregation matches explicit median", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  set.seed(456)
+  default_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+                       estimation_method = "pca")
+  set.seed(456)
+  median_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+                      estimation_method = "pca",
+                      partition_aggregation = "median")
+
+  expect_equal(default_res$ols_coef, median_res$ols_coef)
+  expect_equal(default_res$corrected_iv_coef, median_res$corrected_iv_coef)
+  expect_equal(default_res$var_est_split, median_res$var_est_split)
+})
+
+test_that("lpmec supports winsorized and custom partition aggregation", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  winsorized_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+                          estimation_method = "pca",
+                          partition_aggregation = "winsorized_mean")
+  custom_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+                      estimation_method = "pca",
+                      partition_aggregation = function(x) mean(x))
+
+  expect_s3_class(winsorized_res, "lpmec")
+  expect_s3_class(custom_res, "lpmec")
+  expect_true(is.numeric(winsorized_res$ols_coef))
+  expect_true(is.numeric(custom_res$ols_coef))
 })

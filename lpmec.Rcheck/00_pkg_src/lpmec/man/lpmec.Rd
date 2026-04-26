@@ -12,6 +12,8 @@ lpmec(
   make_observables_groupings = FALSE,
   n_boot = 32L,
   n_partition = 10L,
+  partition_aggregation = "median",
+  partition_aggregation_probs = c(0.01, 0.99),
   boot_basis = 1:length(Y),
   return_intermediaries = TRUE,
   ordinal = FALSE,
@@ -38,6 +40,16 @@ lpmec(
 \item{n_boot}{Integer. Number of bootstrap iterations. Default is 32.}
 
 \item{n_partition}{Integer. Number of partitions for each bootstrap iteration. Default is 10.}
+
+\item{partition_aggregation}{Aggregation strategy for combining estimates across
+partitions within each bootstrap iteration. Default is \code{"median"}. Options
+are \code{"median"}, \code{"winsorized_mean"}, \code{"trimmed_mean"}, or a
+custom function that accepts a numeric vector and returns one numeric value.}
+
+\item{partition_aggregation_probs}{Numeric vector of length 2 used by
+\code{"winsorized_mean"} and \code{"trimmed_mean"}. For winsorization, values
+are clipped to these quantiles before averaging. For trimming, values outside
+these quantiles are dropped before averaging. Default is \code{c(0.01, 0.99)}.}
 
 \item{boot_basis}{Vector of indices or grouping variable for stratified bootstrap. Default is 1:length(Y).}
 
@@ -140,6 +152,13 @@ results <- lpmec(Y = Y,
                  n_boot = 10,    # small values for illustration only
                  n_partition = 5 # small for size
                  )
+
+# Use a winsorized mean across partitions
+results_winsorized <- lpmec(Y = Y,
+                            observables = observables,
+                            n_boot = 10,
+                            n_partition = 5,
+                            partition_aggregation = "winsorized_mean")
 
 # View the corrected IV coefficient and its standard error
 print(results)

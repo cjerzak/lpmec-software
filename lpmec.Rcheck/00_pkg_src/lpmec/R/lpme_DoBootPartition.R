@@ -9,6 +9,14 @@
 #' @param make_observables_groupings Logical. If TRUE, creates dummy variables for each level of the observable indicators. Default is FALSE.
 #' @param n_boot Integer. Number of bootstrap iterations. Default is 32.
 #' @param n_partition Integer. Number of partitions for each bootstrap iteration. Default is 10.
+#' @param partition_aggregation Aggregation strategy for combining estimates across
+#'   partitions within each bootstrap iteration. Default is \code{"median"}. Options
+#'   are \code{"median"}, \code{"winsorized_mean"}, \code{"trimmed_mean"}, or a
+#'   custom function that accepts a numeric vector and returns one numeric value.
+#' @param partition_aggregation_probs Numeric vector of length 2 used by
+#'   \code{"winsorized_mean"} and \code{"trimmed_mean"}. For winsorization, values
+#'   are clipped to these quantiles before averaging. For trimming, values outside
+#'   these quantiles are dropped before averaging. Default is \code{c(0.01, 0.99)}.
 #' @param boot_basis Vector of indices or grouping variable for stratified bootstrap. Default is 1:length(Y).
 #' @param ordinal Logical indicating whether the observable indicators are ordinal (TRUE) or binary (FALSE).
 #' @param return_intermediaries Logical. If TRUE, returns intermediate results. Default is TRUE.
@@ -100,6 +108,13 @@
 #'                  n_partition = 5 # small for size
 #'                  )
 #'
+#' # Use a winsorized mean across partitions
+#' results_winsorized <- lpmec(Y = Y,
+#'                             observables = observables,
+#'                             n_boot = 10,
+#'                             n_partition = 5,
+#'                             partition_aggregation = "winsorized_mean")
+#'
 #' # View the corrected IV coefficient and its standard error
 #' print(results)
 #' }
@@ -118,6 +133,8 @@ lpmec <- function(Y,
                   make_observables_groupings = FALSE,
                   n_boot = 32L,
                   n_partition = 10L,
+                  partition_aggregation = "median",
+                  partition_aggregation_probs = c(0.01, 0.99),
                   boot_basis = 1:length(Y),
                   return_intermediaries = TRUE,
                   ordinal = FALSE,
@@ -211,6 +228,12 @@ lpmec <- function(Y,
   if (!is.logical(return_intermediaries) || length(return_intermediaries) != 1) {
     stop("'return_intermediaries' must be a single logical value (TRUE or FALSE).")
   }
+
+  # Resolve summarizing function for across-partition/boot aggregation
+  theSumFxn <- .lpmec_resolve_partition_aggregation(
+    partition_aggregation,
+    partition_aggregation_probs
+  )
 
   # coerce to data.frame (before groupings check so matrix inputs get column names)
   observables <- as.data.frame( observables )
@@ -316,10 +339,6 @@ lpmec <- function(Y,
       }
     }
   }
-  
-  # Summarizing function for across-partition/boot
-  theSumFxn <- median
-  # theSumFxn <- mean # (alternative if desired)
   
   # Now prepend "Intermediary_" to each piece of stored output
   names(LatentRunResults) <- paste0("Intermediary_", names(LatentRunResults))
