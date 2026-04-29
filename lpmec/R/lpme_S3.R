@@ -151,7 +151,17 @@ plot.lpmec <- function(x, type = "latent", ...) {
          main = "Latent Variable Estimates", pch = 19, ...)
     abline(a = 0, b = 1, col = "red", lty = 2)
   } else if (type == "coefficients") {
-    boot_coefs <- x$Intermediary_corrected_iv_coef[, -1]
+    if (is.null(x$Intermediary_corrected_iv_coef) ||
+        is.null(x$Intermediary_BootIndex)) {
+      stop("Coefficient plots require lpmec(..., return_intermediaries = TRUE).")
+    }
+    boot_coefs <- as.numeric(x$Intermediary_corrected_iv_coef[
+      x$Intermediary_BootIndex != 1
+    ])
+    boot_coefs <- boot_coefs[is.finite(boot_coefs)]
+    if (length(boot_coefs) < 2L) {
+      stop("Coefficient plots require at least two bootstrap coefficient values.")
+    }
     plot(density(boot_coefs), main = "Bootstrap Distribution of Corrected IV Coefficient",
          xlab = "Coefficient Value", ...)
   } else {
