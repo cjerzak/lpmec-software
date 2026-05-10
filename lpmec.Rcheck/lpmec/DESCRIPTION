@@ -31,5 +31,5 @@ RoxygenNote: 7.3.3
 URL: https://github.com/cjerzak/lpmec-software
 BugReports: https://github.com/cjerzak/lpmec-software/issues
 NeedsCompilation: no
-Packaged: 2026-04-26 23:24:27 UTC; cjerzak
-Built: R 4.5.2; ; 2026-04-26 23:24:42 UTC; unix
+Packaged: 2026-05-01 11:46:55 UTC; cjerzak
+Built: R 4.5.2; ; 2026-05-01 11:47:10 UTC; unix

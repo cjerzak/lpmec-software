@@ -98,6 +98,20 @@ test_that("lpmec with stratified bootstrap (boot_basis) works", {
   expect_true("ols_coef" %in% names(res))
 })
 
+test_that("lpmec stratified bootstrap handles unequal stratum sizes", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  boot_groups <- c(rep("small", 10), rep("medium", 20), rep("large", 50))
+
+  res <- lpmec(Y, obs, n_boot = 1, n_partition = 1, boot_basis = boot_groups,
+              estimation_method = "pca")
+
+  expect_s3_class(res, "lpmec")
+  expect_equal(length(res$x_est1), 80)
+  expect_equal(nrow(res$Intermediary_x_est1), 80)
+})
+
 test_that("lpmec intermediary results are stored when return_intermediaries = TRUE", {
   set.seed(123)
   Y <- rnorm(80)
@@ -110,7 +124,23 @@ test_that("lpmec intermediary results are stored when return_intermediaries = TR
   # Should have x_est1 and x_est2 from first run
   expect_true("x_est1" %in% names(res))
   expect_true("x_est2" %in% names(res))
+  expect_true("Intermediary_corrected_iv_coef" %in% names(res))
+  expect_true("Intermediary_BootIndex" %in% names(res))
   expect_equal(length(res$x_est1), 80)
+  expect_silent(plot(res, type = "coefficients"))
+})
+
+test_that("lpmec omits intermediary results when return_intermediaries = FALSE", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res <- lpmec(Y, obs, n_boot = 2, n_partition = 2, estimation_method = "pca",
+              return_intermediaries = FALSE)
+
+  expect_s3_class(res, "lpmec")
+  expect_false(any(grepl("^Intermediary_", names(res))))
+  expect_error(plot(res, type = "coefficients"), "return_intermediaries = TRUE")
 })
 
 test_that("lpmec var_est_split is computed correctly", {
@@ -124,6 +154,17 @@ test_that("lpmec var_est_split is computed correctly", {
   expect_true("var_est_split" %in% names(res))
   # It should be numeric (could be NA in edge cases)
   expect_true(is.numeric(res$var_est_split) || is.na(res$var_est_split))
+})
+
+test_that("lpmec var_est_split is available with one partition", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res <- lpmec(Y, obs, n_boot = 2, n_partition = 1, estimation_method = "pca")
+
+  expect_true(is.numeric(res$var_est_split))
+  expect_false(is.na(res$var_est_split))
 })
 
 test_that("lpmec default partition aggregation matches explicit median", {

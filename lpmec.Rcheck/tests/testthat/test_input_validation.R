@@ -51,6 +51,16 @@ test_that("lpmec_onerun errors on observables with too few columns", {
   expect_error(lpmec_onerun(Y, obs), "at least 4 columns")
 })
 
+test_that("lpmec_onerun errors on observables_groupings with wrong length", {
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec_onerun(Y, obs, observables_groupings = paste0("g", 1:4),
+                 estimation_method = "pca"),
+    "'observables_groupings' must have length equal to ncol\\(observables\\)"
+  )
+})
+
 test_that("lpmec_onerun warns on excessive missing data", {
   set.seed(456)
   Y <- rnorm(80)
@@ -153,6 +163,28 @@ test_that("lpmec_onerun errors on invalid mcmc_control n_samples_warmup", {
   )
 })
 
+test_that("lpmec_onerun errors on invalid mcmc_control subsample_method", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec_onerun(Y, obs, estimation_method = "pca",
+                 mcmc_control = list(subsample_method = "invalid")),
+    "subsample_method must be either"
+  )
+})
+
+test_that("lpmec_onerun errors on invalid batch_size for batch mode", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec_onerun(Y, obs, estimation_method = "pca",
+                 mcmc_control = list(subsample_method = "batch", batch_size = 80)),
+    "batch_size must be a single numeric value"
+  )
+})
+
 # ==============================================================================
 # LPME-SPECIFIC VALIDATION TESTS
 # ==============================================================================
@@ -185,6 +217,17 @@ test_that("lpmec errors on boot_basis with wrong length", {
     lpmec(Y, obs, n_boot = 1, n_partition = 1, boot_basis = 1:50,
          estimation_method = "pca"),
     "'boot_basis' must have the same length"
+  )
+})
+
+test_that("lpmec errors on observables_groupings with wrong length", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  expect_error(
+    lpmec(Y, obs, observables_groupings = paste0("g", 1:4),
+          n_boot = 1, n_partition = 1, estimation_method = "pca"),
+    "'observables_groupings' must have length equal to ncol\\(observables\\)"
   )
 })
 

@@ -229,6 +229,10 @@ lpmec_onerun <- function(Y,
   if (!is.numeric(mcmc_control$n_chains) || mcmc_control$n_chains < 1) {
     stop("mcmc_control$n_chains must be a positive integer.")
   }
+  if (!mcmc_control$subsample_method %in% c("full", "batch")) {
+    stop("mcmc_control$subsample_method must be either 'full' or 'batch'. Received: '",
+         mcmc_control$subsample_method, "'")
+  }
 
   # coerce to data.frame (before groupings check so matrix inputs get column names)
   observables <- as.data.frame( observables )
@@ -237,6 +241,20 @@ lpmec_onerun <- function(Y,
   # fall back to column names of the coerced data.frame
   if (is.null(observables_groupings)) {
     observables_groupings <- colnames(observables)
+  }
+  if (length(observables_groupings) != ncol(observables)) {
+    stop("'observables_groupings' must have length equal to ncol(observables). ",
+         "Length of observables_groupings: ", length(observables_groupings),
+         ", ncol(observables): ", ncol(observables))
+  }
+  if (mcmc_control$subsample_method == "batch") {
+    if (!is.numeric(mcmc_control$batch_size) ||
+        length(mcmc_control$batch_size) != 1L ||
+        !is.finite(mcmc_control$batch_size) ||
+        mcmc_control$batch_size < 1 ||
+        mcmc_control$batch_size >= nrow(observables)) {
+      stop("mcmc_control$batch_size must be a single numeric value between 1 and nrow(observables) - 1 when subsample_method = 'batch'.")
+    }
   }
 
   # Warn about potential issues
@@ -546,46 +564,62 @@ lpmec_onerun <- function(Y,
         N <- ai(nrow(observables_))
         K <- ai(ncol(observables_))
         
-        # Define the two-parameter IRT model using Matt's trick + subsampling
-        # Note: IRTModel_batch is deprecated 
+        # Define the two-parameter IRT model using Matt's trick + subsampling.
         IRTModel_batch <- function(X, Y) {
-            # Number of observations (rows) and items (columns)
-            N <- X$shape[[1]]
-            K <- X$shape[[2]]
-            
-            # Global hyperpriors for ability (non-centered)
+            # Global hyperpriors for ability
             mu_ability <- lpmec_env$numpyro$sample("mu_ability",
                                                   lpmec_env$dist$Normal(0, 1))
             sigma_ability <- lpmec_env$numpyro$sample("sigma_ability",
-                                                     lpmec_env$dist$HalfNormal(1))
-            with(lpmec_env$numpyro$plate("rows", N), {
+                                                     lpmec_env$dist$HalfNormal(0.5))
+
+            # Non-centered parameterization for ability
+            with(lpmec_env$numpyro$plate("rows", X$shape[[1]], dim = -2L), {
               eps_ability <- lpmec_env$numpyro$sample("eps_ability",
                                                      lpmec_env$dist$Normal(0, 1))
-              ability <- lpmec_env$numpyro$deterministic(
-                "ability", (mu_ability + sigma_ability * eps_ability)[,NULL] )
+              ability <- lpmec_env$numpyro$deterministic("ability",
+                                 (mu_ability + sigma_ability * eps_ability) )
             })
-            
-            # Hyperpriors for item parameters
+
+            anchor_id <- NULL
+            if (!is.null(mcmc_control$anchor_parameter_id)) {
+              anchor_id <- as.integer(mcmc_control$anchor_parameter_id - 1L)
+            }
+
             mu_difficulty <- lpmec_env$numpyro$sample("mu_difficulty",
-                                                     lpmec_env$dist$Normal(0, 3))
+                                                     lpmec_env$dist$Normal(0, 2))
             sigma_difficulty <- lpmec_env$numpyro$sample("sigma_difficulty",
-                                                        lpmec_env$dist$HalfNormal(3))
+                                                        lpmec_env$dist$HalfNormal(1))
             mu_log_discrimination <- lpmec_env$numpyro$sample("mu_log_discrimination",
                                                              lpmec_env$dist$Normal(0.5, 1))
             sigma_log_discrimination <- lpmec_env$numpyro$sample("sigma_log_discrimination",
                                                                 lpmec_env$dist$HalfNormal(0.5))
-            with(lpmec_env$numpyro$plate("columns", K), {
-              eps_difficulty <- lpmec_env$numpyro$sample("eps_difficulty",
-                                                        lpmec_env$dist$Normal(0, 3))
-              difficulty <- lpmec_env$numpyro$deterministic(
-                "difficulty", (mu_difficulty + sigma_difficulty * eps_difficulty)[NULL,] )
-              
+            with(lpmec_env$numpyro$plate("columns", X$shape[[2]], dim = -1L), {
+              difficulty_raw <- lpmec_env$numpyro$sample("eps_difficulty",
+                                                        lpmec_env$dist$Normal(0, 1))
+
+              difficulty_adjusted <- difficulty_raw
+              if( !is.null(anchor_id) ){
+                difficulty_adjusted <- difficulty_raw$at[anchor_id]$set(
+                  lpmec_env$jax$nn$softplus(difficulty_raw[anchor_id])
+                )
+              }
+              difficulty <- lpmec_env$numpyro$deterministic("difficulty",
+                                         (difficulty_adjusted)[NULL,])
+
               eps_log_discrimination <- lpmec_env$numpyro$sample("eps_log_discrimination",
-                                                      lpmec_env$dist$Normal(0, 1))
-              log_discrimination <- mu_log_discrimination + sigma_log_discrimination * eps_log_discrimination
-              discrimination <- lpmec_env$numpyro$deterministic(
-                "discrimination", lpmec_env$jax$nn$softplus(log_discrimination)[NULL,] )
+                                                                lpmec_env$dist$Normal(0.5, 2))
+              discrimination <- lpmec_env$numpyro$deterministic("discrimination",
+                                        lpmec_env$jax$nn$softplus(eps_log_discrimination)[NULL,])
             })
+
+            if (estimation_method == "mcmc_joint") {
+              Y_intercept <- lpmec_env$numpyro$sample("YModel_intercept",
+                                                     lpmec_env$dist$Normal(0, 1))
+              Y_slope <- lpmec_env$numpyro$sample("YModel_slope",
+                                                 lpmec_env$dist$Normal(0, 1))
+              Y_sigma <- lpmec_env$numpyro$sample("YModel_sigma",
+                                                 lpmec_env$dist$HalfNormal(1))
+            }
             
             # Define a local likelihood function for the *subset* of rows
             local_lik_fn <- function(){
@@ -614,14 +648,7 @@ lpmec_onerun <- function(Y,
                 
                 # If doing a full regression on Y:
                 if (estimation_method == "mcmc_joint") {
-                  Y_intercept <- lpmec_env$numpyro$sample("YModel_intercept",
-                                                         lpmec_env$dist$Normal(0, 1))
-                  Y_slope <- lpmec_env$numpyro$sample("YModel_slope",
-                                                     lpmec_env$dist$Normal(0, 1))
-                  Y_sigma <- lpmec_env$numpyro$sample("YModel_sigma",
-                                                     lpmec_env$dist$HalfNormal(1))
-                  
-                  Y_sub <- lpmec_env$jnp$take(Y, idx)
+                  Y_sub <- lpmec_env$jnp$take(Y, idx, axis = 0L)
                   Y_mu_sub <- Y_intercept + Y_slope * ability_sub
                   lpmec_env$numpyro$sample(
                     "Ylik_sub",
@@ -632,12 +659,8 @@ lpmec_onerun <- function(Y,
               })
             }
             
-            # Scale the local likelihood by (N / batch_size) for unbiased gradient
-            scaled_lik <- lpmec_env$numpyro$handlers$scale(
-              scale = as.numeric(N / mcmc_control$batch_size))(local_lik_fn)
-            
-            # Execute the scaled likelihood
-            #scaled_lik() # documentation doesn't seem to scale?
+            # NumPyro scales sample sites inside a subsampled plate by
+            # size / subsample_size. Do not also wrap in handlers.scale().
             local_lik_fn()
           }
         
@@ -729,6 +752,10 @@ lpmec_onerun <- function(Y,
         
       # setup & run a MCMC run
       if(mcmc_control$subsample_method == "batch"){ 
+        warning(
+          "NumPyro HMCECS batch mode is experimental. Compare diagnostics ",
+          "against subsample_method = 'full' on smaller data when possible."
+        )
         message("Enlisting HMCECS kernels...")
         # https://num.pyro.ai/en/stable/mcmc.html#numpyro.infer.hmc_gibbs.HMCECS
         kernel <- lpmec_env$numpyro$infer$HMCECS(lpmec_env$numpyro$infer$NUTS(IRTModel_batch), 

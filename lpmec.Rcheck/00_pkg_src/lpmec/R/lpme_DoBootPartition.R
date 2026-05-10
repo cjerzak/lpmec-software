@@ -153,6 +153,7 @@ lpmec <- function(Y,
                   conda_env = "lpmec",
                   conda_env_required = FALSE
                   ){
+  boot_basis_supplied <- !missing(boot_basis)
 
   # ============================================================================
   # INPUT VALIDATION
@@ -243,6 +244,11 @@ lpmec <- function(Y,
   if (is.null(observables_groupings)) {
     observables_groupings <- colnames(observables)
   }
+  if (length(observables_groupings) != ncol(observables)) {
+    stop("'observables_groupings' must have length equal to ncol(observables). ",
+         "Length of observables_groupings: ", length(observables_groupings),
+         ", ncol(observables): ", ncol(observables))
+  }
 
   # Check for excessive missing data (warning only)
   na_prop <- mean(is.na(as.matrix(observables)))
@@ -286,19 +292,15 @@ lpmec <- function(Y,
     if(booti_ == 1L){
       boot_indices <- seq_along(Y)
     } else {
-      # cluster/bootstrap over unique groups in boot_basis
-      sampled_groups <- sample(
-        unique(as.character(boot_basis)), 
-        length(unique(boot_basis)), 
-        replace = TRUE
-      )
-      # expand out to row indices
-      boot_indices <- unlist(
-        tapply(
-          seq_along(boot_basis), 
-          as.character(boot_basis), 
-          c)[sampled_groups]
-      )
+      if (!boot_basis_supplied || length(unique(boot_basis)) == length(Y)) {
+        boot_indices <- sample(seq_along(Y), length(Y), replace = TRUE)
+      } else {
+        strata <- split(seq_along(boot_basis), as.character(boot_basis))
+        boot_indices <- unlist(
+          lapply(strata, function(idx) sample(idx, length(idx), replace = TRUE)),
+          use.names = FALSE
+        )
+      }
     }
     
     for(parti_ in seq_len(n_partition)){
@@ -343,16 +345,11 @@ lpmec <- function(Y,
   # Now prepend "Intermediary_" to each piece of stored output
   names(LatentRunResults) <- paste0("Intermediary_", names(LatentRunResults))
   
-  # Estimate cross-split variance of x_est1 - x_est2 for the first bootstrap
-  # (Essentially the 'split-half' measure of measurement error)
+  # Aggregate split-half measurement-error variance across partitions.
   VarEst_split <- try(
-    theSumFxn(
-      apply(
-        LatentRunResults$Intermediary_x_est1[, LatentRunResults$Intermediary_BootIndex == 1] -
-          LatentRunResults$Intermediary_x_est2[, LatentRunResults$Intermediary_BootIndex == 1],
-        1, sd
-      )
-    ),
+    theSumFxn(LatentRunResults$Intermediary_var_est_split[
+      LatentRunResults$Intermediary_BootIndex == 1
+    ]),
     silent = TRUE
   )
   if(inherits(VarEst_split, "try-error")) { 
@@ -363,13 +360,9 @@ lpmec <- function(Y,
   VarEst_split_se <- try(
     sd(
       sapply(2L:(n_boot + 1L), function(boot_){
-        theSumFxn(
-          apply(
-            LatentRunResults$Intermediary_x_est1[, LatentRunResults$Intermediary_BootIndex == boot_] -
-              LatentRunResults$Intermediary_x_est2[, LatentRunResults$Intermediary_BootIndex == boot_],
-            1, sd
-          )
-        )
+        theSumFxn(LatentRunResults$Intermediary_var_est_split[
+          LatentRunResults$Intermediary_BootIndex == boot_
+        ])
       })
     ),
     silent = TRUE
@@ -607,6 +600,9 @@ lpmec <- function(Y,
       "var_est_split"    = VarEst_split,
       "var_est_split_se" = VarEst_split_se
     )
+  if (return_intermediaries) {
+    results <- c(results, LatentRunResults)
+  }
   class(results) <- "lpmec"
   return(results)
   
