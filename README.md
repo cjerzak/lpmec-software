@@ -116,7 +116,7 @@ lpmec::lpmec_onerun(Y = Yobs,
 ```
 
 ## `lpmec`
-`lpmec` implements a bootstrap analysis for latent variable models with measurement error correction. We average over `n_partition` split sample partitions.
+`lpmec` implements latent variable models with measurement error correction. It fits the original sample, optionally adds bootstrap resampling via `n_boot`, and averages over `n_partition` split sample partitions. Set `n_boot = 0` to disable bootstrap resampling while still aggregating original-sample partitions.
 ```
 # Generate data
 Yobs <- rnorm(1000)

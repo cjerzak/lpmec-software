@@ -195,7 +195,11 @@ test_that("lpmec errors on invalid n_boot", {
   obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
   expect_error(
     lpmec(Y, obs, n_boot = -1, n_partition = 1, estimation_method = "pca"),
-    "'n_boot' must be a single positive integer"
+    "'n_boot' must be a single non-negative integer"
+  )
+  expect_error(
+    lpmec(Y, obs, n_boot = 0.5, n_partition = 1, estimation_method = "pca"),
+    "'n_boot' must be a single non-negative integer"
   )
 })
 
@@ -205,6 +209,10 @@ test_that("lpmec errors on invalid n_partition", {
   obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
   expect_error(
     lpmec(Y, obs, n_boot = 1, n_partition = 0, estimation_method = "pca"),
+    "'n_partition' must be a single positive integer"
+  )
+  expect_error(
+    lpmec(Y, obs, n_boot = 1, n_partition = 1.5, estimation_method = "pca"),
     "'n_partition' must be a single positive integer"
   )
 })

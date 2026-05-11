@@ -37,9 +37,13 @@ lpmec(
 
 \item{make_observables_groupings}{Logical. If TRUE, creates dummy variables for each level of the observable indicators. Default is FALSE.}
 
-\item{n_boot}{Integer. Number of bootstrap iterations. Default is 32.}
+\item{n_boot}{Non-negative integer. Number of bootstrap iterations. Use
+\code{0} to disable bootstrap resampling and fit only the original sample.
+Default is 32.}
 
-\item{n_partition}{Integer. Number of partitions for each bootstrap iteration. Default is 10.}
+\item{n_partition}{Positive integer. Number of split-half partitions for each
+bootstrap iteration. When \code{n_boot = 0}, this still controls how many
+original-sample partition runs are aggregated. Default is 10.}
 
 \item{partition_aggregation}{Aggregation strategy for combining estimates across
 partitions within each bootstrap iteration. Default is \code{"median"}. Options
@@ -130,14 +134,16 @@ A list containing various estimates and statistics (in snake_case):
 }
 }
 \description{
-Implements bootstrapped analysis for latent variable models with measurement error correction
+Implements latent variable models with measurement error correction
 }
 \details{
-This function implements a bootstrapped latent variable analysis with measurement error correction.
-It performs multiple bootstrap iterations, each with multiple partitions. For each partition,
+This function implements a latent variable analysis with measurement error correction.
+It fits the original sample and, when \code{n_boot >= 1}, performs bootstrap
+resampling for uncertainty estimates. Each original or bootstrap sample is
+analyzed with one or more split-half partitions. For each partition,
 it calls the \code{lpmec_onerun} function to estimate latent variables and apply various correction methods.
 The results are then aggregated across partitions and bootstrap iterations to produce final estimates
-and bootstrap standard errors.
+and, when bootstrap draws are available, bootstrap standard errors.
 }
 \examples{
 \donttest{

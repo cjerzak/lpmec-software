@@ -10,7 +10,7 @@
 * checking for file ‘lpmec/DESCRIPTION’ ... OK
 * this is package ‘lpmec’ version ‘1.1.4’
 * package encoding: UTF-8
-* checking CRAN incoming feasibility ... [4s/14s] WARNING
+* checking CRAN incoming feasibility ... [4s/13s] WARNING
 Maintainer: ‘Connor Jerzak <connor.jerzak@gmail.com>’
 
 Insufficient package version (submitted: 1.1.4, existing: 1.1.4)
