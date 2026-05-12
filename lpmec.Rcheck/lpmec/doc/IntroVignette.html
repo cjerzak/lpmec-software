@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2026-05-10" />
+<meta name="date" content="2026-05-12" />
 
 <title>Latent Variable Measurement Error Correction with lpmec</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Latent Variable Measurement Error
 Correction with <code>lpmec</code></h1>
-<h4 class="date">2026-05-10</h4>
+<h4 class="date">2026-05-12</h4>
 
 
 
@@ -384,11 +384,11 @@ indicators:</p>
 <p>Use lpmec to estimate corrected coefficients:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(lpmec)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># Run bootstrapped analysis</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># Run analysis with bootstrap uncertainty estimates</span></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">lpmec</span>(</span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">Y =</span> Yobs,</span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">observables =</span> <span class="fu">as.data.frame</span>(ObservablesMat),</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">n_boot =</span> <span class="dv">10</span>,      <span class="co"># Reduced for demonstration</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">n_boot =</span> <span class="dv">10</span>,      <span class="co"># Use 0 to disable bootstrap resampling</span></span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">n_partition =</span> <span class="dv">5</span>,  <span class="co"># Reduced for demonstration</span></span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">estimation_method =</span> <span class="st">&quot;em&quot;</span></span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>)</span></code></pre></div>

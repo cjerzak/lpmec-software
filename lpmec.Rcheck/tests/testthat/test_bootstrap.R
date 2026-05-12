@@ -64,6 +64,74 @@ test_that("lpmec partition aggregation works with n_partition > 1", {
   expect_true(is.numeric(res$ols_coef))
 })
 
+test_that("lpmec supports n_boot = 0 with one original-sample partition", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+               estimation_method = "averaging")
+
+  expect_s3_class(res, "lpmec")
+  expect_true(is.numeric(res$ols_coef))
+  expect_false(is.na(res$ols_coef))
+  expect_equal(unique(c(res$Intermediary_BootIndex)), 1)
+  expect_equal(ncol(as.matrix(res$Intermediary_x_est1)), 1)
+
+  bootstrap_fields <- c(
+    "ols_se", "ols_lower", "ols_upper", "ols_tstat",
+    "corrected_ols_se", "corrected_ols_lower", "corrected_ols_upper",
+    "corrected_ols_tstat",
+    "corrected_ols_se_alt", "corrected_ols_lower_alt",
+    "corrected_ols_upper_alt", "corrected_ols_tstat_alt",
+    "iv_se", "iv_lower", "iv_upper", "iv_tstat",
+    "corrected_iv_se", "corrected_iv_lower", "corrected_iv_upper",
+    "corrected_iv_tstat",
+    "bayesian_ols_se_outer_normed", "bayesian_ols_lower_outer_normed",
+    "bayesian_ols_upper_outer_normed", "bayesian_ols_tstat_outer_normed",
+    "bayesian_ols_se_inner_normed", "bayesian_ols_lower_inner_normed",
+    "bayesian_ols_upper_inner_normed", "bayesian_ols_tstat_inner_normed",
+    "m_stage_1_erv_se", "m_stage_1_erv_lower", "m_stage_1_erv_upper",
+    "m_stage_1_erv_tstat",
+    "m_reduced_erv_se", "m_reduced_erv_lower", "m_reduced_erv_upper",
+    "m_reduced_erv_tstat",
+    "var_est_split_se"
+  )
+  expect_true(all(bootstrap_fields %in% names(res)))
+  expect_true(all(vapply(res[bootstrap_fields], is.na, logical(1))))
+})
+
+test_that("lpmec standard OLS is deterministic with n_boot = 0", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res1 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+                estimation_method = "averaging")
+  res2 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+                estimation_method = "averaging")
+
+  expected_ols <- coef(lm(Y ~ scale(apply(obs, 1, mean))))[2]
+
+  expect_identical(unname(res1$ols_coef), unname(res2$ols_coef))
+  expect_equal(unname(res1$ols_coef), unname(expected_ols))
+})
+
+test_that("lpmec supports n_boot = 0 with multiple original-sample partitions", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res <- lpmec(Y, obs, n_boot = 0, n_partition = 3,
+               estimation_method = "averaging")
+
+  expect_s3_class(res, "lpmec")
+  expect_equal(unique(c(res$Intermediary_BootIndex)), 1)
+  expect_equal(c(res$Intermediary_PartitionIndex), 1:3)
+  expect_equal(ncol(as.matrix(res$Intermediary_x_est1)), 3)
+  expect_equal(ncol(as.matrix(res$Intermediary_x_est2)), 3)
+})
+
 test_that("lpmec produces confidence intervals with sufficient bootstrap", {
   set.seed(123)
   Y <- rnorm(80)

@@ -1,14 +1,18 @@
 #' lpmec
 #'
-#' Implements bootstrapped analysis for latent variable models with measurement error correction
+#' Implements latent variable models with measurement error correction
 #'
 #' @param Y A vector of observed outcome variables
 #' @param observables A matrix of observable indicators used to estimate the latent variable
 #' @param orientation_signs (optional) A numeric vector of length equal to the number of columns in `observables`, containing 1 or -1 to indicate the desired orientation of each column. If provided, each column of `observables` will be oriented by this sign before analysis. Default is NULL (no orientation applied).
 #' @param observables_groupings A vector specifying groupings for the observable indicators. Default is column names of observables.
 #' @param make_observables_groupings Logical. If TRUE, creates dummy variables for each level of the observable indicators. Default is FALSE.
-#' @param n_boot Integer. Number of bootstrap iterations. Default is 32.
-#' @param n_partition Integer. Number of partitions for each bootstrap iteration. Default is 10.
+#' @param n_boot Non-negative integer. Number of bootstrap iterations. Use
+#'   \code{0} to disable bootstrap resampling and fit only the original sample.
+#'   Default is 32.
+#' @param n_partition Positive integer. Number of split-half partitions for each
+#'   bootstrap iteration. When \code{n_boot = 0}, this still controls how many
+#'   original-sample partition runs are aggregated. Default is 10.
 #' @param partition_aggregation Aggregation strategy for combining estimates across
 #'   partitions within each bootstrap iteration. Default is \code{"median"}. Options
 #'   are \code{"median"}, \code{"winsorized_mean"}, \code{"trimmed_mean"}, or a
@@ -88,11 +92,13 @@
 #' }
 #'
 #' @details
-#' This function implements a bootstrapped latent variable analysis with measurement error correction.
-#' It performs multiple bootstrap iterations, each with multiple partitions. For each partition,
+#' This function implements a latent variable analysis with measurement error correction.
+#' It fits the original sample and, when \code{n_boot >= 1}, performs bootstrap
+#' resampling for uncertainty estimates. Each original or bootstrap sample is
+#' analyzed with one or more split-half partitions. For each partition,
 #' it calls the \code{lpmec_onerun} function to estimate latent variables and apply various correction methods.
 #' The results are then aggregated across partitions and bootstrap iterations to produce final estimates
-#' and bootstrap standard errors.
+#' and, when bootstrap draws are available, bootstrap standard errors.
 #'
 #' @examples
 #' \donttest{
@@ -207,12 +213,17 @@ lpmec <- function(Y,
   }
 
   # Validate bootstrap/partition parameters
-  if (!is.numeric(n_boot) || length(n_boot) != 1 || n_boot < 1) {
-    stop("'n_boot' must be a single positive integer. Received: ", n_boot)
+  is_whole_number <- function(x) {
+    is.numeric(x) && length(x) == 1L && is.finite(x) && x == floor(x)
   }
-  if (!is.numeric(n_partition) || length(n_partition) != 1 || n_partition < 1) {
+  if (!is_whole_number(n_boot) || n_boot < 0) {
+    stop("'n_boot' must be a single non-negative integer. Received: ", n_boot)
+  }
+  if (!is_whole_number(n_partition) || n_partition < 1) {
     stop("'n_partition' must be a single positive integer. Received: ", n_partition)
   }
+  n_boot <- as.integer(n_boot)
+  n_partition <- as.integer(n_partition)
 
   # Validate boot_basis
   if (length(boot_basis) != length(Y)) {
@@ -357,18 +368,21 @@ lpmec <- function(Y,
   }
   
   # Standard error of the cross-split variance across bootstraps
-  VarEst_split_se <- try(
-    sd(
-      sapply(2L:(n_boot + 1L), function(boot_){
-        theSumFxn(LatentRunResults$Intermediary_var_est_split[
-          LatentRunResults$Intermediary_BootIndex == boot_
-        ])
-      })
-    ),
-    silent = TRUE
-  )
-  if(inherits(VarEst_split_se, "try-error")) { 
-    VarEst_split_se <- NA 
+  VarEst_split_se <- NA_real_
+  if (n_boot >= 1L) {
+    VarEst_split_se <- try(
+      sd(
+        sapply(seq.int(2L, n_boot + 1L), function(boot_){
+          theSumFxn(LatentRunResults$Intermediary_var_est_split[
+            LatentRunResults$Intermediary_BootIndex == boot_
+          ])
+        })
+      ),
+      silent = TRUE
+    )
+    if(inherits(VarEst_split_se, "try-error")) { 
+      VarEst_split_se <- NA 
+    }
   }
   
   # Helpers for summary stats
@@ -387,6 +401,12 @@ lpmec <- function(Y,
   # lower/upper bounds, etc.
 
   takeforse <- which(c(LatentRunResults$Intermediary_BootIndex)!=1)
+  first_intermediary_column <- function(x) {
+    if (is.null(dim(x))) {
+      return(c(x))
+    }
+    c(x[, 1L])
+  }
   results <- list(
       # Naive OLS
       "ols_coef"   = (m1_ <- tapply(
@@ -593,8 +613,8 @@ lpmec <- function(Y,
       "m_reduced_erv_tstat" = (m2_ / se2_),
       
       # Final single-run estimates for x
-      "x_est1" = LatentRunResults$Intermediary_x_est1[, 1],
-      "x_est2" = LatentRunResults$Intermediary_x_est2[, 1],
+      "x_est1" = first_intermediary_column(LatentRunResults$Intermediary_x_est1),
+      "x_est2" = first_intermediary_column(LatentRunResults$Intermediary_x_est2),
       
       # Additional summary of the cross-split variance
       "var_est_split"    = VarEst_split,

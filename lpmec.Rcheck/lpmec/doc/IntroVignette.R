@@ -20,11 +20,11 @@ ObservablesMat <- sapply(1:d, function(j) {
 ## ----eval=TRUE----------------------------------------------------------------
 library(lpmec)
 
-# Run bootstrapped analysis
+# Run analysis with bootstrap uncertainty estimates
 results <- lpmec(
   Y = Yobs,
   observables = as.data.frame(ObservablesMat),
-  n_boot = 10,      # Reduced for demonstration
+  n_boot = 10,      # Use 0 to disable bootstrap resampling
   n_partition = 5,  # Reduced for demonstration
   estimation_method = "em"
 )

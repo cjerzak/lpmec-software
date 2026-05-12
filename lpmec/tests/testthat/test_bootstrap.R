@@ -101,6 +101,22 @@ test_that("lpmec supports n_boot = 0 with one original-sample partition", {
   expect_true(all(vapply(res[bootstrap_fields], is.na, logical(1))))
 })
 
+test_that("lpmec standard OLS is deterministic with n_boot = 0", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  res1 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+                estimation_method = "averaging")
+  res2 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+                estimation_method = "averaging")
+
+  expected_ols <- coef(lm(Y ~ scale(apply(obs, 1, mean))))[2]
+
+  expect_identical(unname(res1$ols_coef), unname(res2$ols_coef))
+  expect_equal(unname(res1$ols_coef), unname(expected_ols))
+})
+
 test_that("lpmec supports n_boot = 0 with multiple original-sample partitions", {
   set.seed(123)
   Y <- rnorm(80)

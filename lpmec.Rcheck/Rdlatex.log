@@ -85,67 +85,67 @@ Overfull \hbox (24.73999pt too wide) in paragraph at lines 202--202
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 [4]
-Overfull \hbox (7.57896pt too wide) in paragraph at lines 227--231
+Overfull \hbox (7.57896pt too wide) in paragraph at lines 231--235
 \T1/ptm/m/n/10 strap it-er-a-tion. De-fault is []\T1/zi4/m/n/10 "median"[]\T1/p
 tm/m/n/10 . Op-tions are []\T1/zi4/m/n/10 "median"[]\T1/ptm/m/n/10 , []\T1/zi4/
 m/n/10 "winsorized_mean"[]\T1/ptm/m/n/10 ,
 
-Overfull \hbox (15.20741pt too wide) in paragraph at lines 237--238
+Overfull \hbox (15.20741pt too wide) in paragraph at lines 241--242
 []\T1/ptm/m/n/10 Vector of in-dices or group-ing vari-able for strat-i-fied boo
 t-strap. De-fault is 1:length(Y). 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/ts1ptm.fd)
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 252--253
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 256--257
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 257--258
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 261--262
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 [5]
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 262--265
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 266--269
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 269--272
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 273--276
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
 [6]
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 319--320
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 325--326
 []\T1/zi4/m/n/10 bayesian_ols_se_outer_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_outer_norm
 ed[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 323--324
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 329--330
 []\T1/zi4/m/n/10 bayesian_ols_se_inner_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_inner_norm
 ed[]\T1/ptm/m/n/10 . 
 [7]
-Overfull \hbox (24.73999pt too wide) in paragraph at lines 383--383
+Overfull \hbox (24.73999pt too wide) in paragraph at lines 389--389
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 
-Overfull \hbox (21.39984pt too wide) in paragraph at lines 384--384
+Overfull \hbox (21.39984pt too wide) in paragraph at lines 390--390
  []    \T1/zi4/m/n/10 batch_size = 512L, chain_method = "parallel", subsample_m
 ethod = "full", n_thin_by =[] 
 
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 412--413
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 418--419
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 417--418
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 423--424
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 [8]
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 422--425
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 428--431
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 429--432
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 435--438
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
@@ -154,8 +154,8 @@ m/n/10 "vectorized"[]\T1/ptm/m/n/10 .
 enc}] [12] [13]
 No file Rd2.ind.
 [14]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.aux)
 
 Package rerunfilecheck Warning: File `Rd2.out' has changed.
 (rerunfilecheck)                Rerun to get outlines right
@@ -175,7 +175,7 @@ zi4r.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><
 /usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local
 /texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2
 024/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on Rd2.pdf (14 pages, 108953 bytes).
+Output written on Rd2.pdf (14 pages, 109339 bytes).
 Transcript written on Rd2.log.
 This is makeindex, version 2.17 [TeX Live 2024] (kpathsea + Thai support).
 Scanning input file Rd2.idx....done (39 entries accepted, 0 rejected).
@@ -251,99 +251,99 @@ ty (/usr/local/texlive/2024/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
 Writing index file Rd2.idx
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/t1ptm.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.aux)
 (/usr/local/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.out)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.out)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/t1zi4.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/jknapltx/ursfs.fd)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/p
-dftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr
-/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/
+pdftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/us
+r/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
 [2] [3] [4]
 Overfull \hbox (24.73999pt too wide) in paragraph at lines 202--202
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 
-Overfull \hbox (7.57896pt too wide) in paragraph at lines 227--231
+Overfull \hbox (7.57896pt too wide) in paragraph at lines 231--235
 \T1/ptm/m/n/10 strap it-er-a-tion. De-fault is []\T1/zi4/m/n/10 "median"[]\T1/p
 tm/m/n/10 . Op-tions are []\T1/zi4/m/n/10 "median"[]\T1/ptm/m/n/10 , []\T1/zi4/
 m/n/10 "winsorized_mean"[]\T1/ptm/m/n/10 ,
 
-Overfull \hbox (15.20741pt too wide) in paragraph at lines 237--238
+Overfull \hbox (15.20741pt too wide) in paragraph at lines 241--242
 []\T1/ptm/m/n/10 Vector of in-dices or group-ing vari-able for strat-i-fied boo
 t-strap. De-fault is 1:length(Y). 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/ts1ptm.fd) [5]
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 252--253
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 256--257
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 257--258
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 261--262
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 262--265
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 266--269
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 269--272
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 273--276
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
 [6]
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 319--320
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 325--326
 []\T1/zi4/m/n/10 bayesian_ols_se_outer_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_outer_norm
 ed[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 323--324
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 329--330
 []\T1/zi4/m/n/10 bayesian_ols_se_inner_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_inner_norm
 ed[]\T1/ptm/m/n/10 . 
 [7]
-Overfull \hbox (24.73999pt too wide) in paragraph at lines 383--383
+Overfull \hbox (24.73999pt too wide) in paragraph at lines 389--389
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 
-Overfull \hbox (21.39984pt too wide) in paragraph at lines 384--384
+Overfull \hbox (21.39984pt too wide) in paragraph at lines 390--390
  []    \T1/zi4/m/n/10 batch_size = 512L, chain_method = "parallel", subsample_m
 ethod = "full", n_thin_by =[] 
 [8]
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 412--413
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 418--419
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 417--418
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 423--424
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 422--425
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 428--431
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 429--432
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 435--438
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
 [9] [10] (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/ts1zi4.fd)
 [11{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.enc}]
 [12] [13]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.ind [14] [15])
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.ind [14] [15])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.aux)
 
 Package rerunfilecheck Warning: File `Rd2.out' has changed.
 (rerunfilecheck)                Rerun to get outlines right
@@ -363,12 +363,12 @@ zi4r.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><
 /usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local
 /texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2
 024/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on Rd2.pdf (15 pages, 111915 bytes).
+Output written on Rd2.pdf (15 pages, 112514 bytes).
 Transcript written on Rd2.log.
 This is makeindex, version 2.17 [TeX Live 2024] (kpathsea + Thai support).
 Scanning input file Rd2.idx....done (39 entries accepted, 0 rejected).
-Sorting entries....done (209 comparisons).
-Generating output file Rd2.ind....done (44 lines written, 1 warning).
+Sorting entries....done (213 comparisons).
+Generating output file Rd2.ind....done (43 lines written, 0 warnings).
 Output written in Rd2.ind.
 Transcript written in Rd2.ilg.
 This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex)
@@ -439,99 +439,99 @@ ty (/usr/local/texlive/2024/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
 Writing index file Rd2.idx
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/t1ptm.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.aux)
 (/usr/local/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.out)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.out)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/t1zi4.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/jknapltx/ursfs.fd)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/p
-dftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr
-/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/
+pdftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/us
+r/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
 [2] [3] [4]
 Overfull \hbox (24.73999pt too wide) in paragraph at lines 202--202
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 
-Overfull \hbox (7.57896pt too wide) in paragraph at lines 227--231
+Overfull \hbox (7.57896pt too wide) in paragraph at lines 231--235
 \T1/ptm/m/n/10 strap it-er-a-tion. De-fault is []\T1/zi4/m/n/10 "median"[]\T1/p
 tm/m/n/10 . Op-tions are []\T1/zi4/m/n/10 "median"[]\T1/ptm/m/n/10 , []\T1/zi4/
 m/n/10 "winsorized_mean"[]\T1/ptm/m/n/10 ,
 
-Overfull \hbox (15.20741pt too wide) in paragraph at lines 237--238
+Overfull \hbox (15.20741pt too wide) in paragraph at lines 241--242
 []\T1/ptm/m/n/10 Vector of in-dices or group-ing vari-able for strat-i-fied boo
 t-strap. De-fault is 1:length(Y). 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/ts1ptm.fd) [5]
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 252--253
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 256--257
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 257--258
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 261--262
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 262--265
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 266--269
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 269--272
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 273--276
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
 [6]
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 319--320
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 325--326
 []\T1/zi4/m/n/10 bayesian_ols_se_outer_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_outer_norm
 ed[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (88.76926pt too wide) in paragraph at lines 323--324
+Overfull \hbox (88.76926pt too wide) in paragraph at lines 329--330
 []\T1/zi4/m/n/10 bayesian_ols_se_inner_normed[]\T1/ptm/m/n/10 : Pos-te-rior sta
 n-dard er-ror cor-re-spond-ing to []\T1/zi4/m/n/10 bayesian_ols_coef_inner_norm
 ed[]\T1/ptm/m/n/10 . 
 [7]
-Overfull \hbox (24.73999pt too wide) in paragraph at lines 383--383
+Overfull \hbox (24.73999pt too wide) in paragraph at lines 389--389
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
 0L, n_samples_mcmc = 1000L,[] 
 
-Overfull \hbox (21.39984pt too wide) in paragraph at lines 384--384
+Overfull \hbox (21.39984pt too wide) in paragraph at lines 390--390
  []    \T1/zi4/m/n/10 batch_size = 512L, chain_method = "parallel", subsample_m
 ethod = "full", n_thin_by =[] 
 [8]
-Overfull \hbox (28.99799pt too wide) in paragraph at lines 412--413
+Overfull \hbox (28.99799pt too wide) in paragraph at lines 418--419
 []\T1/ptm/m/n/10 "custom": In this case, la-tent es-ti-ma-tion per-formed us-in
 g []\T1/zi4/m/n/10 latent_estimation_fn[]\T1/ptm/m/n/10 . 
 
-Overfull \hbox (65.8083pt too wide) in paragraph at lines 417--418
+Overfull \hbox (65.8083pt too wide) in paragraph at lines 423--424
 []\T1/ptm/m/n/10 Custom func-tion for es-ti-mat-ing la-tent trait from []\T1/zi
 4/m/n/10 observables []\T1/ptm/m/n/10 if []\T1/zi4/m/n/10 estimation_method="cu
 stom"
 
-Overfull \hbox (0.87929pt too wide) in paragraph at lines 422--425
+Overfull \hbox (0.87929pt too wide) in paragraph at lines 428--431
 \T1/ptm/m/n/10 are []\T1/zi4/m/n/10 "pscl" []\T1/ptm/m/n/10 (de-fault, uses the
  R-based []\T1/zi4/m/n/10 pscl::ideal []\T1/ptm/m/n/10 func-tion) or []\T1/zi4/
 m/n/10 "numpyro"
 
-Overfull \hbox (16.62926pt too wide) in paragraph at lines 429--432
+Overfull \hbox (16.62926pt too wide) in paragraph at lines 435--438
 \T1/ptm/m/n/10 ti-ple chains. Op-tions: []\T1/zi4/m/n/10 "parallel" []\T1/ptm/m
 /n/10 (de-fault), []\T1/zi4/m/n/10 "sequential"[]\T1/ptm/m/n/10 , or []\T1/zi4/
 m/n/10 "vectorized"[]\T1/ptm/m/n/10 . 
 [9] [10] (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/ts1zi4.fd)
 [11{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.enc}]
 [12] [13]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.ind [14] [15])
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpaeHvo2/Rd2pdf43a5
-47267fdd/Rd2.aux) )
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.ind [14] [15])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
+e6261c677/Rd2.aux) )
 (see the transcript file for additional information)
 pdfTeX warning (dest): name{Rfn.density} has been referenced but does not exist
 , replaced by a fixed one
@@ -545,8 +545,8 @@ zi4r.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><
 /usr/local/texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local
 /texlive/2024/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2
 024/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on Rd2.pdf (15 pages, 112232 bytes).
+Output written on Rd2.pdf (15 pages, 112915 bytes).
 Transcript written on Rd2.log.
 Saving output to ‘lpmec-manual.pdf’ ...
 Done
-You may want to clean up by 'rm -Rf /var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T//RtmpaeHvo2/Rd2pdf43a547267fdd'
+You may want to clean up by 'rm -Rf /var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T//Rtmpr111u6/Rd2pdf16f5e6261c677'

@@ -160,7 +160,7 @@ plot.lpmec <- function(x, type = "latent", ...) {
     ])
     boot_coefs <- boot_coefs[is.finite(boot_coefs)]
     if (length(boot_coefs) < 2L) {
-      stop("Coefficient plots require at least two bootstrap coefficient values.")
+      stop("Coefficient plots require bootstrap draws; run lpmec(..., n_boot >= 1, return_intermediaries = TRUE).")
     }
     plot(density(boot_coefs), main = "Bootstrap Distribution of Corrected IV Coefficient",
          xlab = "Coefficient Value", ...)
