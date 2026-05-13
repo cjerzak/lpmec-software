@@ -51,6 +51,13 @@
 #'     Default is \code{1}.}
 #'   \item{\code{n_chains}}{Integer specifying the number of parallel MCMC chains to run.
 #'     Default is \code{2}.}
+#'   \item{\code{outcome_prior}}{List controlling \code{"mcmc_joint"} outcome-model
+#'     priors for the NumPyro backend. By default, \code{calibration = "data"}
+#'     centers the intercept prior at \code{mean(Y)} and scales intercept, slope,
+#'     and residual-sigma priors by \code{sd(Y)}. Use \code{calibration = "legacy"}
+#'     to restore the previous unit-scale priors, or provide numeric overrides for
+#'     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
+#'     \code{slope_sd}, and \code{sigma_sd}.}
 #' }
 #' @param conda_env A character string specifying the name of the conda environment to use
 #'   via \code{reticulate}. Default is \code{"lpmec"}.
@@ -155,7 +162,8 @@ lpmec <- function(Y,
                     subsample_method = "full",
                     anchor_parameter_id = NULL,
                     n_thin_by = 1L,
-                    n_chains = 2L),
+                    n_chains = 2L,
+                    outcome_prior = list(calibration = "data")),
                   conda_env = "lpmec",
                   conda_env_required = FALSE
                   ){

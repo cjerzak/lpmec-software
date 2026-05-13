@@ -154,8 +154,8 @@ m/n/10 "vectorized"[]\T1/ptm/m/n/10 .
 enc}] [12] [13]
 No file Rd2.ind.
 [14]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.aux)
 
 Package rerunfilecheck Warning: File `Rd2.out' has changed.
 (rerunfilecheck)                Rerun to get outlines right
@@ -251,23 +251,23 @@ ty (/usr/local/texlive/2024/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
 Writing index file Rd2.idx
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/t1ptm.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.aux)
 (/usr/local/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.out)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.out)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/t1zi4.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/jknapltx/ursfs.fd)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/
-pdftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/us
-r/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdf
+tex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr/l
+ocal/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
 [2] [3] [4]
 Overfull \hbox (24.73999pt too wide) in paragraph at lines 202--202
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
@@ -340,10 +340,10 @@ m/n/10 "vectorized"[]\T1/ptm/m/n/10 .
 [9] [10] (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/ts1zi4.fd)
 [11{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.enc}]
 [12] [13]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.ind [14] [15])
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.ind [14] [15])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.aux)
 
 Package rerunfilecheck Warning: File `Rd2.out' has changed.
 (rerunfilecheck)                Rerun to get outlines right
@@ -439,23 +439,23 @@ ty (/usr/local/texlive/2024/texmf-dist/tex/latex/kvoptions/kvoptions.sty)))
 Writing index file Rd2.idx
 (/usr/local/texlive/2024/texmf-dist/tex/latex/psnfss/t1ptm.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.aux)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.aux)
 (/usr/local/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 )
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.out)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.out)
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.out)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/t1zi4.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd)
 (/usr/local/texlive/2024/texmf-dist/tex/latex/jknapltx/ursfs.fd)
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/
-pdftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/us
-r/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.toc [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdf
+tex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr/l
+ocal/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-0.enc}])
 [2] [3] [4]
 Overfull \hbox (24.73999pt too wide) in paragraph at lines 202--202
  []  \T1/zi4/m/n/10 mcmc_control = list(backend = "pscl", n_samples_warmup = 50
@@ -528,10 +528,10 @@ m/n/10 "vectorized"[]\T1/ptm/m/n/10 .
 [9] [10] (/usr/local/texlive/2024/texmf-dist/tex/latex/inconsolata/ts1zi4.fd)
 [11{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.enc}]
 [12] [13]
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.ind [14] [15])
-(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/Rtmpr111u6/Rd2pdf16f5
-e6261c677/Rd2.aux) )
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.ind [14] [15])
+(/private/var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T/RtmpVNP1nf/Rd2pdfca4c
+49f1d6/Rd2.aux) )
 (see the transcript file for additional information)
 pdfTeX warning (dest): name{Rfn.density} has been referenced but does not exist
 , replaced by a fixed one
@@ -549,4 +549,4 @@ Output written on Rd2.pdf (15 pages, 112915 bytes).
 Transcript written on Rd2.log.
 Saving output to ‘lpmec-manual.pdf’ ...
 Done
-You may want to clean up by 'rm -Rf /var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T//Rtmpr111u6/Rd2pdf16f5e6261c677'
+You may want to clean up by 'rm -Rf /var/folders/gv/l5wlstr55gl_g0pgx6k47z9m0000gn/T//RtmpVNP1nf/Rd2pdfca4c49f1d6'
