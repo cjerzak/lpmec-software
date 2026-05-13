@@ -33,6 +33,13 @@
 #'     Default is \code{1}.}
 #'   \item{\code{n_chains}}{Integer specifying the number of parallel MCMC chains to run.
 #'     Default is \code{2}.}
+#'   \item{\code{outcome_prior}}{List controlling \code{"mcmc_joint"} outcome-model
+#'     priors for the NumPyro backend. By default, \code{calibration = "data"}
+#'     centers the intercept prior at \code{mean(Y)} and scales intercept, slope,
+#'     and residual-sigma priors by \code{sd(Y)}. Use \code{calibration = "legacy"}
+#'     to restore the previous unit-scale priors, or provide numeric overrides for
+#'     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
+#'     \code{slope_sd}, and \code{sigma_sd}.}
 #' }
 #' @param conda_env A character string specifying the name of the conda environment to use
 #'   via \code{reticulate}. Default is \code{"lpmec"}.
@@ -127,7 +134,8 @@ lpmec_onerun <- function(Y,
                             chain_method = "parallel",
                             subsample_method = "full",
                             n_thin_by = 1L,
-                            n_chains = 2L),
+                            n_chains = 2L,
+                            outcome_prior = list(calibration = "data")),
                           ordinal = FALSE,
                           conda_env = "lpmec",
                           conda_env_required = FALSE){
@@ -141,7 +149,8 @@ lpmec_onerun <- function(Y,
     chain_method = "parallel",
     subsample_method = "full",
     n_thin_by = 1L,
-    n_chains = 2L
+    n_chains = 2L,
+    outcome_prior = list(calibration = "data")
   )
 
   # Warn user if partial mcmc_control was provided
@@ -256,6 +265,7 @@ lpmec_onerun <- function(Y,
       stop("mcmc_control$batch_size must be a single numeric value between 1 and nrow(observables) - 1 when subsample_method = 'batch'.")
     }
   }
+  outcome_prior <- .lpmec_resolve_outcome_prior(Y, mcmc_control$outcome_prior)
 
   # Warn about potential issues
   n_unique_obs <- length(unique(observables_groupings))
@@ -614,11 +624,13 @@ lpmec_onerun <- function(Y,
 
             if (estimation_method == "mcmc_joint") {
               Y_intercept <- lpmec_env$numpyro$sample("YModel_intercept",
-                                                     lpmec_env$dist$Normal(0, 1))
+                                                     lpmec_env$dist$Normal(outcome_prior$intercept_mean,
+                                                                          outcome_prior$intercept_sd))
               Y_slope <- lpmec_env$numpyro$sample("YModel_slope",
-                                                 lpmec_env$dist$Normal(0, 1))
+                                                 lpmec_env$dist$Normal(outcome_prior$slope_mean,
+                                                                      outcome_prior$slope_sd))
               Y_sigma <- lpmec_env$numpyro$sample("YModel_sigma",
-                                                 lpmec_env$dist$HalfNormal(1))
+                                                 lpmec_env$dist$HalfNormal(outcome_prior$sigma_sd))
             }
             
             # Define a local likelihood function for the *subset* of rows
@@ -737,11 +749,13 @@ lpmec_onerun <- function(Y,
             # If you are using the outcome portion in "mcmc_joint" mode:
             if(estimation_method == "mcmc_joint"){
               Y_intercept <- lpmec_env$numpyro$sample("YModel_intercept",
-                                                     lpmec_env$dist$Normal(0, 1))
+                                                     lpmec_env$dist$Normal(outcome_prior$intercept_mean,
+                                                                          outcome_prior$intercept_sd))
               Y_slope <- lpmec_env$numpyro$sample("YModel_slope",
-                                                 lpmec_env$dist$Normal(0, 1))
+                                                 lpmec_env$dist$Normal(outcome_prior$slope_mean,
+                                                                      outcome_prior$slope_sd))
               Y_sigma <- lpmec_env$numpyro$sample("YModel_sigma",
-                                                 lpmec_env$dist$HalfNormal(1))
+                                                 lpmec_env$dist$HalfNormal(outcome_prior$sigma_sd))
               
               Y_mu <- Y_intercept + Y_slope * ability
               lpmec_env$numpyro$sample("Ylik",
@@ -1051,6 +1065,12 @@ lpmec_onerun <- function(Y,
     
     "m_stage_1_erv" = mstage1ERV, 
     "m_reduced_erv" = mreducedERV, 
+
+    "outcome_prior_intercept_mean" = outcome_prior$intercept_mean,
+    "outcome_prior_intercept_sd" = outcome_prior$intercept_sd,
+    "outcome_prior_slope_mean" = outcome_prior$slope_mean,
+    "outcome_prior_slope_sd" = outcome_prior$slope_sd,
+    "outcome_prior_sigma_sd" = outcome_prior$sigma_sd,
     
     "x_est1" = x.est1,
     "x_est2" = x.est2

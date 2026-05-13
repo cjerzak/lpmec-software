@@ -21,7 +21,8 @@ lpmec(
   latent_estimation_fn = NULL,
   mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc = 1000L,
     batch_size = 512L, chain_method = "parallel", subsample_method = "full",
-    anchor_parameter_id = NULL, n_thin_by = 1L, n_chains = 2L),
+    anchor_parameter_id = NULL, n_thin_by = 1L, n_chains = 2L, outcome_prior =
+    list(calibration = "data")),
   conda_env = "lpmec",
   conda_env_required = FALSE
 )
@@ -90,6 +91,13 @@ these quantiles are dropped before averaging. Default is \code{c(0.01, 0.99)}.}
     Default is \code{1}.}
   \item{\code{n_chains}}{Integer specifying the number of parallel MCMC chains to run.
     Default is \code{2}.}
+  \item{\code{outcome_prior}}{List controlling \code{"mcmc_joint"} outcome-model
+    priors for the NumPyro backend. By default, \code{calibration = "data"}
+    centers the intercept prior at \code{mean(Y)} and scales intercept, slope,
+    and residual-sigma priors by \code{sd(Y)}. Use \code{calibration = "legacy"}
+    to restore the previous unit-scale priors, or provide numeric overrides for
+    \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
+    \code{slope_sd}, and \code{sigma_sd}.}
 }}
 
 \item{conda_env}{A character string specifying the name of the conda environment to use

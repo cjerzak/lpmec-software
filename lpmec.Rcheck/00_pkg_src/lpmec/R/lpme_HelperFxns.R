@@ -64,3 +64,100 @@ lpmec_env <- new.env( parent = emptyenv() )
     trimmed_mean = function(x) .lpmec_trimmed_mean(x, partition_aggregation_probs)
   )
 }
+
+.lpmec_validate_outcome_prior_scalar <- function(value, name, positive = FALSE) {
+  if (!is.numeric(value) ||
+      length(value) != 1L ||
+      !is.finite(value) ||
+      (positive && value <= 0)) {
+    qualifier <- if (positive) "a single positive finite numeric value" else
+      "a single finite numeric value"
+    stop("mcmc_control$outcome_prior$", name, " must be ", qualifier, ".")
+  }
+  as.numeric(value)
+}
+
+.lpmec_resolve_outcome_prior <- function(Y, outcome_prior = list()) {
+  if (is.null(outcome_prior)) {
+    outcome_prior <- list()
+  }
+  if (!is.list(outcome_prior)) {
+    stop("mcmc_control$outcome_prior must be a list.")
+  }
+
+  valid_names <- c(
+    "calibration",
+    "scale_floor",
+    "intercept_mean",
+    "intercept_sd",
+    "slope_mean",
+    "slope_sd",
+    "sigma_sd"
+  )
+  unknown_names <- setdiff(names(outcome_prior), valid_names)
+  if (length(unknown_names) > 0L) {
+    stop("Unknown mcmc_control$outcome_prior field(s): ",
+         paste(unknown_names, collapse = ", "), ".")
+  }
+
+  calibration <- outcome_prior$calibration
+  if (is.null(calibration)) {
+    calibration <- "data"
+  }
+  if (!is.character(calibration) ||
+      length(calibration) != 1L ||
+      !calibration %in% c("data", "legacy")) {
+    stop("mcmc_control$outcome_prior$calibration must be either 'data' or 'legacy'.")
+  }
+
+  scale_floor <- outcome_prior$scale_floor
+  if (is.null(scale_floor)) {
+    scale_floor <- 1e-6
+  }
+  scale_floor <- .lpmec_validate_outcome_prior_scalar(
+    scale_floor,
+    "scale_floor",
+    positive = TRUE
+  )
+
+  if (calibration == "legacy") {
+    resolved <- list(
+      calibration = calibration,
+      intercept_mean = 0,
+      intercept_sd = 1,
+      slope_mean = 0,
+      slope_sd = 1,
+      sigma_sd = 1
+    )
+  } else {
+    finite_y <- Y[is.finite(Y)]
+    if (length(finite_y) < 1L) {
+      stop("Outcome prior calibration requires at least one finite value in 'Y'.")
+    }
+    y_sd <- stats::sd(finite_y)
+    if (!is.finite(y_sd) || y_sd < scale_floor) {
+      y_sd <- scale_floor
+    }
+
+    resolved <- list(
+      calibration = calibration,
+      intercept_mean = mean(finite_y),
+      intercept_sd = 2.5 * y_sd,
+      slope_mean = 0,
+      slope_sd = y_sd,
+      sigma_sd = y_sd
+    )
+  }
+
+  for (name in setdiff(valid_names, c("calibration", "scale_floor"))) {
+    if (!is.null(outcome_prior[[name]])) {
+      resolved[[name]] <- .lpmec_validate_outcome_prior_scalar(
+        outcome_prior[[name]],
+        name,
+        positive = grepl("_sd$", name)
+      )
+    }
+  }
+
+  resolved
+}
