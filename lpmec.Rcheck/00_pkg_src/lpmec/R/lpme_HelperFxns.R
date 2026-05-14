@@ -257,6 +257,61 @@ lpmec_env <- new.env( parent = emptyenv() )
   )
 }
 
+.lpmec_mcmc_joint2_orient_draws <- function(theta_draws, lambda_y1_draws, observables) {
+  theta_draws <- as.matrix(theta_draws)
+  lambda_y1_draws <- as.numeric(lambda_y1_draws)
+
+  if (ncol(theta_draws) != length(lambda_y1_draws)) {
+    stop("'lambda_y1_draws' must have one value for each column of 'theta_draws'.")
+  }
+  if (nrow(theta_draws) != nrow(observables)) {
+    stop("'theta_draws' must have one row for each row of 'observables'.")
+  }
+
+  observables_matrix <- suppressWarnings(
+    matrix(
+      as.numeric(as.character(unlist(observables, use.names = FALSE))),
+      nrow = nrow(observables),
+      ncol = ncol(observables)
+    )
+  )
+  reference <- as.numeric(scale(rowMeans(observables_matrix)))
+  anchor_subject <- which.max(reference)
+  if (length(anchor_subject) == 0L || !is.finite(reference[anchor_subject])) {
+    anchor_subject <- which.max(rowMeans(observables_matrix))
+  }
+
+  draw_reference_cor <- apply(theta_draws, 2, function(theta_draw) {
+    suppressWarnings(stats::cor(theta_draw, reference, use = "pairwise.complete.obs"))
+  })
+  finite_cor <- is.finite(draw_reference_cor)
+
+  signs <- rep(1, ncol(theta_draws))
+  signs[finite_cor & draw_reference_cor < 0] <- -1
+
+  use_anchor <- !finite_cor
+  if (any(use_anchor) && length(anchor_subject) > 0L && is.finite(anchor_subject)) {
+    signs[use_anchor] <- ifelse(theta_draws[anchor_subject, use_anchor, drop = TRUE] < 0, -1, 1)
+  }
+
+  theta_draws_oriented <- sweep(theta_draws, 2, signs, FUN = "*")
+  lambda_y1_draws_oriented <- lambda_y1_draws * signs
+
+  list(
+    theta_draws = theta_draws_oriented,
+    lambda_y1_draws = lambda_y1_draws_oriented,
+    signs = signs,
+    draw_reference_cor = draw_reference_cor,
+    n_flipped = sum(signs < 0),
+    prop_flipped = mean(signs < 0),
+    min_abs_draw_reference_cor = if (any(finite_cor)) {
+      min(abs(draw_reference_cor[finite_cor]))
+    } else {
+      NA_real_
+    }
+  )
+}
+
 .lpmec_numpyro_array <- function(x) {
   as.array(lpmec_env$np$array(x))
 }
@@ -465,11 +520,15 @@ lpmec_env <- new.env( parent = emptyenv() )
   posterior_draws <- sampler$get_samples(group_by_chain = TRUE)
   theta_draws <- .lpmec_mcmc_joint2_extract_theta(posterior_draws$theta)
   lambda_y1_draws <- .lpmec_mcmc_joint2_extract_scalar_draws(posterior_draws$lambda_y1)
-  slopes <- .lpmec_mcmc_joint2_bayesian_slopes(lambda_y1_draws, theta_draws)
+  oriented_draws <- .lpmec_mcmc_joint2_orient_draws(theta_draws, lambda_y1_draws, observables)
+  slopes <- .lpmec_mcmc_joint2_bayesian_slopes(
+    oriented_draws$lambda_y1_draws,
+    oriented_draws$theta_draws
+  )
   diagnostics <- .lpmec_mcmc_joint2_diagnostics(sampler, posterior_draws, theta_draws)
 
   list(
-    x_est = as.matrix(scale(rowMeans(theta_draws))),
+    x_est = as.matrix(scale(rowMeans(oriented_draws$theta_draws))),
     bayesian_ols_coef_inner_normed = slopes$bayesian_ols_coef_inner_normed,
     bayesian_ols_se_inner_normed = slopes$bayesian_ols_se_inner_normed,
     bayesian_ols_coef_outer_normed = slopes$bayesian_ols_coef_outer_normed,
@@ -478,6 +537,9 @@ lpmec_env <- new.env( parent = emptyenv() )
     mcmc_joint2_ability_min_ess_pct = diagnostics$ability_min_ess_pct,
     mcmc_joint2_max_rhat = diagnostics$max_rhat,
     mcmc_joint2_num_divergent = diagnostics$num_divergent,
-    mcmc_joint2_mean_accept_prob = diagnostics$mean_accept_prob
+    mcmc_joint2_mean_accept_prob = diagnostics$mean_accept_prob,
+    mcmc_joint2_orientation_n_flipped = oriented_draws$n_flipped,
+    mcmc_joint2_orientation_prop_flipped = oriented_draws$prop_flipped,
+    mcmc_joint2_orientation_min_abs_cor = oriented_draws$min_abs_draw_reference_cor
   )
 }

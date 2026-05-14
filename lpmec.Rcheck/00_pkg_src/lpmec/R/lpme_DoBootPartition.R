@@ -620,6 +620,18 @@ lpmec <- function(Y,
         LatentRunResults$Intermediary_mcmc_joint2_mean_accept_prob,
         LatentRunResults$Intermediary_BootIndex, theSumFxn
       )[1],
+      "mcmc_joint2_orientation_n_flipped" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_orientation_n_flipped,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_orientation_prop_flipped" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_orientation_prop_flipped,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_orientation_min_abs_cor" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_orientation_min_abs_cor,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
       
       # Robustness-value measures 
       "m_stage_1_erv" = (m2_ <- tapply(

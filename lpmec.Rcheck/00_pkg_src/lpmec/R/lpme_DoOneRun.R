@@ -303,6 +303,9 @@ lpmec_onerun <- function(Y,
   mcmc_joint2_max_rhat <- NA_real_
   mcmc_joint2_num_divergent <- NA_real_
   mcmc_joint2_mean_accept_prob <- NA_real_
+  mcmc_joint2_orientation_n_flipped <- NA_real_
+  mcmc_joint2_orientation_prop_flipped <- NA_real_
+  mcmc_joint2_orientation_min_abs_cor <- NA_real_
   items.split1_names <- sample(unique(observables_groupings), 
                                size = floor(length(unique(observables_groupings))/2), replace=FALSE)
   items.split2_names <- unique(observables_groupings)[! (observables_groupings %in% items.split1_names)]
@@ -451,6 +454,9 @@ lpmec_onerun <- function(Y,
         mcmc_joint2_max_rhat <- joint2_results$mcmc_joint2_max_rhat
         mcmc_joint2_num_divergent <- joint2_results$mcmc_joint2_num_divergent
         mcmc_joint2_mean_accept_prob <- joint2_results$mcmc_joint2_mean_accept_prob
+        mcmc_joint2_orientation_n_flipped <- joint2_results$mcmc_joint2_orientation_n_flipped
+        mcmc_joint2_orientation_prop_flipped <- joint2_results$mcmc_joint2_orientation_prop_flipped
+        mcmc_joint2_orientation_min_abs_cor <- joint2_results$mcmc_joint2_orientation_min_abs_cor
       }
     }
 
@@ -1114,6 +1120,9 @@ lpmec_onerun <- function(Y,
     "mcmc_joint2_max_rhat" = mcmc_joint2_max_rhat,
     "mcmc_joint2_num_divergent" = mcmc_joint2_num_divergent,
     "mcmc_joint2_mean_accept_prob" = mcmc_joint2_mean_accept_prob,
+    "mcmc_joint2_orientation_n_flipped" = mcmc_joint2_orientation_n_flipped,
+    "mcmc_joint2_orientation_prop_flipped" = mcmc_joint2_orientation_prop_flipped,
+    "mcmc_joint2_orientation_min_abs_cor" = mcmc_joint2_orientation_min_abs_cor,
     
     "x_est1" = x.est1,
     "x_est2" = x.est2
