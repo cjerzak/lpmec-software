@@ -112,57 +112,6 @@ test_that("mcmc_joint2 slope helper matches the inner-normalized formula", {
   )
 })
 
-test_that("mcmc_joint2 orientation helper aligns reflected draws and slopes", {
-  obs <- matrix(
-    c(
-      0, 0, 0,
-      0, 0, 1,
-      0, 1, 1,
-      1, 1, 1
-    ),
-    nrow = 4,
-    byrow = TRUE
-  )
-  theta_reference <- as.numeric(scale(rowMeans(obs)))
-  theta_draws <- cbind(theta_reference, -theta_reference)
-  lambda_y1_draws <- c(0.7, -0.7)
-
-  oriented <- lpmec:::.lpmec_mcmc_joint2_orient_draws(
-    theta_draws,
-    lambda_y1_draws,
-    obs
-  )
-  slopes <- lpmec:::.lpmec_mcmc_joint2_bayesian_slopes(
-    oriented$lambda_y1_draws,
-    oriented$theta_draws
-  )
-
-  expect_equal(oriented$signs, c(1, -1))
-  expect_equal(oriented$lambda_y1_draws, c(0.7, 0.7))
-  expect_true(all(slopes$inner_draws > 0))
-  expect_equal(unname(slopes$inner_draws), rep(0.7 * stats::sd(theta_reference), 2))
-  expect_equal(slopes$bayesian_ols_coef_inner_normed, 0.7)
-  expect_equal(oriented$n_flipped, 1)
-  expect_equal(oriented$prop_flipped, 0.5)
-  expect_equal(oriented$min_abs_draw_reference_cor, 1)
-})
-
-test_that("mcmc_joint2 orientation helper falls back to anchor when correlation is unavailable", {
-  obs <- matrix(0, nrow = 3, ncol = 4)
-  theta_draws <- cbind(c(1, -1, 0), c(-1, 1, 0))
-  lambda_y1_draws <- c(0.4, -0.4)
-
-  oriented <- lpmec:::.lpmec_mcmc_joint2_orient_draws(
-    theta_draws,
-    lambda_y1_draws,
-    obs
-  )
-
-  expect_equal(oriented$signs, c(1, -1))
-  expect_equal(oriented$lambda_y1_draws, c(0.4, 0.4))
-  expect_true(is.na(oriented$min_abs_draw_reference_cor))
-})
-
 test_that("mcmc_joint2 does not call MCMCpack and preserves the mcmc_joint branch", {
   source_text <- paste(
     readLines(test_path("../../R/lpme_DoOneRun.R"), warn = FALSE),
@@ -210,7 +159,4 @@ test_that("mcmc_joint2 NumPyro smoke test returns finite estimates and diagnosti
   expect_true(is.finite(res$mcmc_joint2_max_rhat))
   expect_true(is.finite(res$mcmc_joint2_num_divergent))
   expect_true(is.finite(res$mcmc_joint2_mean_accept_prob))
-  expect_true(is.finite(res$mcmc_joint2_orientation_n_flipped))
-  expect_true(is.finite(res$mcmc_joint2_orientation_prop_flipped))
-  expect_true(is.finite(res$mcmc_joint2_orientation_min_abs_cor))
 })

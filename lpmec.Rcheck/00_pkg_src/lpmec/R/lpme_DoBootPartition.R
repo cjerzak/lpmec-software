@@ -31,6 +31,7 @@
 #' \item "averaging": Uses feature averaging.
 #' \item "mcmc": Markov Chain Monte Carlo estimation using either \code{pscl::ideal} (R backend) or \code{numpyro} (Python backend)
 #' \item "mcmc_joint": Joint Bayesian model that simultaneously estimates latent variables and outcome relationship using \code{numpyro}
+#' \item "mcmc_joint2": NumPyro mixed factor-analysis benchmark with binary indicators and continuous \code{Y} in one factor model
 #' \item "mcmc_overimputation": Two-stage MCMC approach with measurement error correction via over-imputation
 #' \item "custom": In this case, latent estimation performed using \code{latent_estimation_fn}.
 #' }
@@ -58,6 +59,9 @@
 #'     to restore the previous unit-scale priors, or provide numeric overrides for
 #'     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
 #'     \code{slope_sd}, and \code{sigma_sd}.}
+#'   \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
+#'     priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
+#'     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.}
 #' }
 #' @param conda_env A character string specifying the name of the conda environment to use
 #'   via \code{reticulate}. Default is \code{"lpmec"}.
@@ -163,7 +167,8 @@ lpmec <- function(Y,
                     anchor_parameter_id = NULL,
                     n_thin_by = 1L,
                     n_chains = 2L,
-                    outcome_prior = list(calibration = "data")),
+                    outcome_prior = list(calibration = "data"),
+                    joint2_prior = list()),
                   conda_env = "lpmec",
                   conda_env_required = FALSE
                   ){
@@ -204,7 +209,7 @@ lpmec <- function(Y,
   }
 
   # Validate estimation_method
-  valid_methods <- c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_overimputation", "custom")
+  valid_methods <- c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_joint2", "mcmc_overimputation", "custom")
   if (!estimation_method %in% valid_methods) {
     stop("'estimation_method' must be one of: ", paste(valid_methods, collapse = ", "),
          ". Received: '", estimation_method, "'")
@@ -248,6 +253,13 @@ lpmec <- function(Y,
   if (!is.logical(return_intermediaries) || length(return_intermediaries) != 1) {
     stop("'return_intermediaries' must be a single logical value (TRUE or FALSE).")
   }
+  if (!is.list(mcmc_control)) {
+    stop("'mcmc_control' must be a list.")
+  }
+  mcmc_control <- utils::modifyList(
+    list(backend = "pscl", joint2_prior = list()),
+    mcmc_control
+  )
 
   # Resolve summarizing function for across-partition/boot aggregation
   theSumFxn <- .lpmec_resolve_partition_aggregation(
@@ -304,6 +316,11 @@ lpmec <- function(Y,
       })
       colnames(observables) <- colnames_observables
     }
+  }
+
+  if (estimation_method == "mcmc_joint2") {
+    .lpmec_validate_mcmc_joint2_inputs(Y, observables, ordinal, mcmc_control)
+    .lpmec_resolve_joint2_prior(mcmc_control$joint2_prior)
   }
   
   for(booti_ in seq_len(n_boot + 1L)){
@@ -582,6 +599,27 @@ lpmec <- function(Y,
         LatentRunResults$Intermediary_BootIndex[takeforse], theSumFxn
       )),
       "bayesian_ols_tstat_inner_normed" = (m4_ / se4_),
+
+      "mcmc_joint2_ability_mean_ess_pct" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_ability_mean_ess_pct,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_ability_min_ess_pct" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_ability_min_ess_pct,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_max_rhat" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_max_rhat,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_num_divergent" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_num_divergent,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
+      "mcmc_joint2_mean_accept_prob" = tapply(
+        LatentRunResults$Intermediary_mcmc_joint2_mean_accept_prob,
+        LatentRunResults$Intermediary_BootIndex, theSumFxn
+      )[1],
       
       # Robustness-value measures 
       "m_stage_1_erv" = (m2_ <- tapply(
