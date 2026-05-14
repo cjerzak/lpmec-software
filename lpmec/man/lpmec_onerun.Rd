@@ -13,7 +13,7 @@ lpmec_onerun(
   latent_estimation_fn = NULL,
   mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc = 1000L,
     batch_size = 512L, chain_method = "parallel", subsample_method = "full", n_thin_by =
-    1L, n_chains = 2L, outcome_prior = list(calibration = "data")),
+    1L, n_chains = 2L, outcome_prior = list(calibration = "data"), joint2_prior = list()),
   ordinal = FALSE,
   conda_env = "lpmec",
   conda_env_required = FALSE
@@ -35,6 +35,7 @@ lpmec_onerun(
 \item "averaging": Uses feature averaging.
 \item "mcmc": Markov Chain Monte Carlo estimation using either \code{pscl::ideal} (R backend) or \code{numpyro} (Python backend)
 \item "mcmc_joint": Joint Bayesian model that simultaneously estimates latent variables and outcome relationship using \code{numpyro}
+\item "mcmc_joint2": NumPyro mixed factor-analysis benchmark with binary indicators and continuous \code{Y} in one factor model
 \item "mcmc_overimputation": Two-stage MCMC approach with measurement error correction via over-imputation
 \item "custom": In this case, latent estimation performed using \code{latent_estimation_fn}.
 }}
@@ -64,6 +65,9 @@ lpmec_onerun(
     to restore the previous unit-scale priors, or provide numeric overrides for
     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
     \code{slope_sd}, and \code{sigma_sd}.}
+  \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
+    priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
+    \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.}
 }}
 
 \item{ordinal}{Logical indicating whether the observable indicators are ordinal (TRUE) or binary (FALSE).}

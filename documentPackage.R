@@ -1,8 +1,12 @@
 {
   rm(list=ls()); options(error = NULL)
 
+  # install current local build
+  install.packages( "~/Documents/lpmec-software/lpmec",repos = NULL, type = "source",force = F) # install from local
+  
   # set path and specify package name
   setwd(sprintf("~/Documents/%s-software", package_name <- "lpmec"))
+  
 
   # get version number from DESCRIPTION
   package_path <- sprintf("~/Documents/%s-software/%s", package_name, package_name)

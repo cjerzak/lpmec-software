@@ -13,6 +13,7 @@
 #' \item "averaging": Uses feature averaging.
 #' \item "mcmc": Markov Chain Monte Carlo estimation using either \code{pscl::ideal} (R backend) or \code{numpyro} (Python backend)
 #' \item "mcmc_joint": Joint Bayesian model that simultaneously estimates latent variables and outcome relationship using \code{numpyro}
+#' \item "mcmc_joint2": NumPyro mixed factor-analysis benchmark with binary indicators and continuous \code{Y} in one factor model
 #' \item "mcmc_overimputation": Two-stage MCMC approach with measurement error correction via over-imputation
 #' \item "custom": In this case, latent estimation performed using \code{latent_estimation_fn}.
 #' }
@@ -40,6 +41,9 @@
 #'     to restore the previous unit-scale priors, or provide numeric overrides for
 #'     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
 #'     \code{slope_sd}, and \code{sigma_sd}.}
+#'   \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
+#'     priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
+#'     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.}
 #' }
 #' @param conda_env A character string specifying the name of the conda environment to use
 #'   via \code{reticulate}. Default is \code{"lpmec"}.
@@ -135,7 +139,8 @@ lpmec_onerun <- function(Y,
                             subsample_method = "full",
                             n_thin_by = 1L,
                             n_chains = 2L,
-                            outcome_prior = list(calibration = "data")),
+                            outcome_prior = list(calibration = "data"),
+                            joint2_prior = list()),
                           ordinal = FALSE,
                           conda_env = "lpmec",
                           conda_env_required = FALSE){
@@ -150,7 +155,8 @@ lpmec_onerun <- function(Y,
     subsample_method = "full",
     n_thin_by = 1L,
     n_chains = 2L,
-    outcome_prior = list(calibration = "data")
+    outcome_prior = list(calibration = "data"),
+    joint2_prior = list()
   )
 
   # Warn user if partial mcmc_control was provided
@@ -200,7 +206,7 @@ lpmec_onerun <- function(Y,
   }
 
   # Validate estimation_method
-  valid_methods <- c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_overimputation", "custom")
+  valid_methods <- c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_joint2", "mcmc_overimputation", "custom")
   if (!estimation_method %in% valid_methods) {
     stop("'estimation_method' must be one of: ", paste(valid_methods, collapse = ", "),
          ". Received: '", estimation_method, "'")
@@ -266,6 +272,10 @@ lpmec_onerun <- function(Y,
     }
   }
   outcome_prior <- .lpmec_resolve_outcome_prior(Y, mcmc_control$outcome_prior)
+  if (estimation_method == "mcmc_joint2") {
+    .lpmec_validate_mcmc_joint2_inputs(Y, observables, ordinal, mcmc_control)
+    .lpmec_resolve_joint2_prior(mcmc_control$joint2_prior)
+  }
 
   # Warn about potential issues
   n_unique_obs <- length(unique(observables_groupings))
@@ -288,6 +298,11 @@ lpmec_onerun <- function(Y,
   Bayesian_OLSSE_InnerNormed <- Bayesian_OLSCoef_InnerNormed <- NA; 
   Bayesian_OLSSE_OuterNormed <- Bayesian_OLSCoef_OuterNormed <- NA;
   FullBayesianSlope_mean <- FullBayesianSlope_std <- NA
+  mcmc_joint2_ability_mean_ess_pct <- NA_real_
+  mcmc_joint2_ability_min_ess_pct <- NA_real_
+  mcmc_joint2_max_rhat <- NA_real_
+  mcmc_joint2_num_divergent <- NA_real_
+  mcmc_joint2_mean_accept_prob <- NA_real_
   items.split1_names <- sample(unique(observables_groupings), 
                                size = floor(length(unique(observables_groupings))/2), replace=FALSE)
   items.split2_names <- unique(observables_groupings)[! (observables_groupings %in% items.split1_names)]
@@ -417,7 +432,29 @@ lpmec_onerun <- function(Y,
       }
     }
     
-    if( grepl(estimation_method, pattern = "mcmc") & mcmc_control$backend == "pscl" ){
+    if (estimation_method == "mcmc_joint2") {
+      joint2_results <- .lpmec_run_numpyro_mcmc_joint2(
+        Y = Y,
+        observables = observables_,
+        mcmc_control = mcmc_control,
+        conda_env = conda_env,
+        conda_env_required = conda_env_required
+      )
+      x.est_ <- joint2_results$x_est
+      if (split_ == "") {
+        Bayesian_OLSCoef_InnerNormed <- joint2_results$bayesian_ols_coef_inner_normed
+        Bayesian_OLSSE_InnerNormed <- joint2_results$bayesian_ols_se_inner_normed
+        Bayesian_OLSCoef_OuterNormed <- joint2_results$bayesian_ols_coef_outer_normed
+        Bayesian_OLSSE_OuterNormed <- joint2_results$bayesian_ols_se_outer_normed
+        mcmc_joint2_ability_mean_ess_pct <- joint2_results$mcmc_joint2_ability_mean_ess_pct
+        mcmc_joint2_ability_min_ess_pct <- joint2_results$mcmc_joint2_ability_min_ess_pct
+        mcmc_joint2_max_rhat <- joint2_results$mcmc_joint2_max_rhat
+        mcmc_joint2_num_divergent <- joint2_results$mcmc_joint2_num_divergent
+        mcmc_joint2_mean_accept_prob <- joint2_results$mcmc_joint2_mean_accept_prob
+      }
+    }
+
+    if( estimation_method %in% c("mcmc", "mcmc_joint", "mcmc_overimputation") & mcmc_control$backend == "pscl" ){
       if(estimation_method == "mcmc_joint"){stop('Must use numpyro with option: estimation_method="mcmc_joint"')}
       if(estimation_method == "mcmc" ){
         t0_ <- Sys.time()
@@ -561,7 +598,7 @@ lpmec_onerun <- function(Y,
         ## ?? 
       }
     }
-    if( grepl(estimation_method, pattern = "mcmc") & mcmc_control$backend == "numpyro" ){
+    if( estimation_method %in% c("mcmc", "mcmc_joint", "mcmc_overimputation") & mcmc_control$backend == "numpyro" ){
         if(!"jax" %in% ls(envir = lpmec_env)){ initialize_jax(conda_env, conda_env_required) }
         
         # Construct for annotating conditionally independent variables.
@@ -1071,6 +1108,12 @@ lpmec_onerun <- function(Y,
     "outcome_prior_slope_mean" = outcome_prior$slope_mean,
     "outcome_prior_slope_sd" = outcome_prior$slope_sd,
     "outcome_prior_sigma_sd" = outcome_prior$sigma_sd,
+
+    "mcmc_joint2_ability_mean_ess_pct" = mcmc_joint2_ability_mean_ess_pct,
+    "mcmc_joint2_ability_min_ess_pct" = mcmc_joint2_ability_min_ess_pct,
+    "mcmc_joint2_max_rhat" = mcmc_joint2_max_rhat,
+    "mcmc_joint2_num_divergent" = mcmc_joint2_num_divergent,
+    "mcmc_joint2_mean_accept_prob" = mcmc_joint2_mean_accept_prob,
     
     "x_est1" = x.est1,
     "x_est2" = x.est2
