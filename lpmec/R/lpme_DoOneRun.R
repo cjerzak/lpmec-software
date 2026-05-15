@@ -601,7 +601,7 @@ lpmec_onerun <- function(Y,
         message(sprintf("\n Overimputation Runtime: %.3f min",  tdiff_ <- as.numeric(difftime(Sys.time(),  t0_, units = "secs"))/60))
       }
       if(estimation_method == "mcmc_joint" & split_ == ""){
-        ## ?? 
+        ## Path not implemented 
       }
     }
     if( estimation_method %in% c("mcmc", "mcmc_joint", "mcmc_overimputation") & mcmc_control$backend == "numpyro" ){
