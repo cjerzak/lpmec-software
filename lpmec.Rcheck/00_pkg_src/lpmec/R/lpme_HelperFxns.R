@@ -400,8 +400,6 @@ lpmec_env <- new.env( parent = emptyenv() )
   joint2_prior <- .lpmec_resolve_joint2_prior(mcmc_control$joint2_prior)
 
   lpmec_env$numpyro$set_host_device_count(mcmc_control$n_chains)
-  N <- ai(nrow(observables))
-  K <- ai(ncol(observables))
 
   MixedFactorModel <- function(X, Y) {
     with(lpmec_env$numpyro$plate("rows", X$shape[[1]], dim = -1L), {
@@ -413,39 +411,15 @@ lpmec_env <- new.env( parent = emptyenv() )
         "lambda_item_intercept",
         lpmec_env$dist$Normal(joint2_prior$lambda_mean, joint2_prior$lambda_sd)
       )
+      lambda_item_loading_raw <- lpmec_env$numpyro$sample(
+        "lambda_item_loading_raw",
+        lpmec_env$dist$Normal(joint2_prior$lambda_mean, joint2_prior$lambda_sd)
+      )
+      lambda_item_loading <- lpmec_env$numpyro$deterministic(
+        "lambda_item_loading",
+        lpmec_env$jax$nn$softplus(lambda_item_loading_raw)
+      )
     })
-
-    lambda_item_loading_first <- lpmec_env$numpyro$sample(
-      "lambda_item_loading_first",
-      lpmec_env$dist$TruncatedNormal(
-        loc = joint2_prior$lambda_mean,
-        scale = joint2_prior$lambda_sd,
-        low = 0
-      )
-    )
-    if (K > 1L) {
-      with(lpmec_env$numpyro$plate("columns_free", K - 1L, dim = -1L), {
-        lambda_item_loading_free <- lpmec_env$numpyro$sample(
-          "lambda_item_loading_free",
-          lpmec_env$dist$Normal(joint2_prior$lambda_mean, joint2_prior$lambda_sd)
-        )
-      })
-      lambda_item_loading <- lpmec_env$numpyro$deterministic(
-        "lambda_item_loading",
-        lpmec_env$jnp$concatenate(
-          list(
-            lpmec_env$jnp$expand_dims(lambda_item_loading_first, 0L),
-            lambda_item_loading_free
-          ),
-          axis = 0L
-        )
-      )
-    } else {
-      lambda_item_loading <- lpmec_env$numpyro$deterministic(
-        "lambda_item_loading",
-        lpmec_env$jnp$expand_dims(lambda_item_loading_first, 0L)
-      )
-    }
 
     lambda_y0 <- lpmec_env$numpyro$sample(
       "lambda_y0",
@@ -467,12 +441,16 @@ lpmec_env <- new.env( parent = emptyenv() )
     )
     with(lpmec_env$numpyro$plate("rows_obs", X$shape[[1]], dim = -2L), {
       with(lpmec_env$numpyro$plate("columns_obs", X$shape[[2]], dim = -1L), {
-        lpmec_env$numpyro$sample("Xlik", lpmec_env$dist$Bernoulli(probs = item_probs), obs = X)
+        lpmec_env$numpyro$sample("Xlik",
+                                 lpmec_env$dist$Bernoulli(probs = item_probs),
+                                 obs = X)
       })
     })
 
     Y_mu <- lambda_y0 + lambda_y1 * theta
-    lpmec_env$numpyro$sample("Ylik", lpmec_env$dist$Normal(Y_mu, sigma_y), obs = Y)
+    lpmec_env$numpyro$sample("Ylik",
+                             lpmec_env$dist$Normal(Y_mu, sigma_y),
+                             obs = Y)
   }
 
   kernel <- lpmec_env$numpyro$infer$NUTS(

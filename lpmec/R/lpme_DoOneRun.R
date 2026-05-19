@@ -43,7 +43,10 @@
 #'     \code{slope_sd}, and \code{sigma_sd}.}
 #'   \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
 #'     priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
-#'     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.}
+#'     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.
+#'     For item loadings, \code{lambda_mean} and \code{lambda_sd}
+#'     parameterize the raw loading scale before the positive \code{softplus}
+#'     transform; all item loadings are positive by default.}
 #' }
 #' @param conda_env A character string specifying the name of the conda environment to use
 #'   via \code{reticulate}. Default is \code{"lpmec"}.

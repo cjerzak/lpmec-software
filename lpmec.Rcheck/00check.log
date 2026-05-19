@@ -25,7 +25,8 @@ Insufficient package version (submitted: 1.1.4, existing: 1.1.4)
 * checking whether package ‘lpmec’ can be installed ... OK
 * checking installed package size ... OK
 * checking package directory ... OK
-* checking for future file timestamps ... OK
+* checking for future file timestamps ... NOTE
+unable to verify current time
 * checking ‘build’ directory ... OK
 * checking DESCRIPTION meta-information ... OK
 * checking top-level files ... OK
@@ -72,4 +73,4 @@ Insufficient package version (submitted: 1.1.4, existing: 1.1.4)
 * checking for non-standard things in the check directory ... OK
 * checking for detritus in the temp directory ... OK
 * DONE
-Status: 1 WARNING
+Status: 1 WARNING, 1 NOTE

@@ -163,6 +163,24 @@ test_that("mcmc_joint2 orientation helper falls back to anchor when correlation 
   expect_true(is.na(oriented$min_abs_draw_reference_cor))
 })
 
+test_that("mcmc_joint2 constrains all item loadings positive", {
+  helper_text <- paste(
+    readLines(test_path("../../R/lpme_HelperFxns.R"), warn = FALSE),
+    collapse = "\n"
+  )
+
+  expect_true(grepl('"lambda_item_loading_raw"', helper_text, fixed = TRUE))
+  expect_true(grepl(
+    "lpmec_env$jax$nn$softplus(lambda_item_loading_raw)",
+    helper_text,
+    fixed = TRUE
+  ))
+  expect_false(grepl("lambda_item_loading_first", helper_text, fixed = TRUE))
+  expect_false(grepl("lambda_item_loading_free", helper_text, fixed = TRUE))
+  expect_false(grepl("columns_free", helper_text, fixed = TRUE))
+  expect_false(grepl("softplus(lambda_y1", helper_text, fixed = TRUE))
+})
+
 test_that("mcmc_joint2 does not call MCMCpack and preserves the mcmc_joint branch", {
   source_text <- paste(
     readLines(test_path("../../R/lpme_DoOneRun.R"), warn = FALSE),
@@ -213,4 +231,5 @@ test_that("mcmc_joint2 NumPyro smoke test returns finite estimates and diagnosti
   expect_true(is.finite(res$mcmc_joint2_orientation_n_flipped))
   expect_true(is.finite(res$mcmc_joint2_orientation_prop_flipped))
   expect_true(is.finite(res$mcmc_joint2_orientation_min_abs_cor))
+  expect_equal(res$mcmc_joint2_orientation_prop_flipped, 0)
 })
