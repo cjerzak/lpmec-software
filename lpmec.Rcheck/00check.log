@@ -10,7 +10,7 @@
 * checking for file ‘lpmec/DESCRIPTION’ ... OK
 * this is package ‘lpmec’ version ‘1.1.4’
 * package encoding: UTF-8
-* checking CRAN incoming feasibility ... [4s/14s] WARNING
+* checking CRAN incoming feasibility ... [5s/28s] WARNING
 Maintainer: ‘Connor Jerzak <connor.jerzak@gmail.com>’
 
 Insufficient package version (submitted: 1.1.4, existing: 1.1.4)
@@ -61,7 +61,7 @@ unable to verify current time
 * checking installed files from ‘inst/doc’ ... OK
 * checking files in ‘vignettes’ ... OK
 * checking examples ... OK
-* checking examples with --run-donttest ... [24s/24s] OK
+* checking examples with --run-donttest ... [23s/23s] OK
 * checking for unstated dependencies in ‘tests’ ... OK
 * checking tests ... OK
   Running ‘testthat.R’
