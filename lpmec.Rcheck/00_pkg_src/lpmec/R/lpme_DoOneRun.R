@@ -652,7 +652,7 @@ lpmec_onerun <- function(Y,
             with(lpmec_env$numpyro$plate("columns", X$shape[[2]], dim = -1L), {
               difficulty_raw <- lpmec_env$numpyro$sample("eps_difficulty",
                                                         lpmec_env$dist$Normal(0, 1))
-
+              
               difficulty_adjusted <- difficulty_raw
               if( !is.null(anchor_id) ){
                 difficulty_adjusted <- difficulty_raw$at[anchor_id]$set(
@@ -789,7 +789,10 @@ lpmec_onerun <- function(Y,
             #lpmec_env$numpyro$sample("Xlik", lpmec_env$dist$Bernoulli(logits=Xprobs), obs=X)
             with(lpmec_env$numpyro$plate("rows", X$shape[[1]], dim = -2L), {
               with(lpmec_env$numpyro$plate("columns", X$shape[[2]], dim = -1L), {
-                lpmec_env$numpyro$sample("Xlik", lpmec_env$dist$Bernoulli(logits = Xprobs), obs = X)
+                # logit likelihood 
+                #lpmec_env$numpyro$sample("Xlik", lpmec_env$dist$Bernoulli(logits = Xprobs), obs = X) 
+                # probit likelihood 
+                lpmec_env$numpyro$sample("Xlik", lpmec_env$dist$Bernoulli(probs =  lpmec_env$jax$scipy$special$ndtr(Xprobs)), obs = X)
               }) })
             
             # If you are using the outcome portion in "mcmc_joint" mode:
