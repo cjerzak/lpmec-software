@@ -34,7 +34,8 @@ infer_orientation_signs <- function(Y, observables, method = c("Y", "PC1")) {
     stop("infer_orientation_signs currently supports only binary observables")
   }
   if (method == "PC1") {
-    pc1 <- prcomp(observables, scale. = TRUE)$x[, 1]
+    pca_inputs <- .lpmec_prepare_pca_observables(observables, label = "'observables'")
+    pc1 <- prcomp(pca_inputs$matrix, center = TRUE, scale. = TRUE)$x[, 1]
     cor_target <- pc1
   } else {
     if (missing(Y)) {

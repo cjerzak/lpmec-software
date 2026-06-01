@@ -44,6 +44,7 @@ print.lpmec_onerun <- function(x, ...) {
   cat(sprintf("Uncorrected Coefficient (OLS): %.3f (SE: %.3f)\n", x$ols_coef, x$ols_se))
   cat(sprintf("Corrected Coefficient: %.3f (SE: %.3f)\n", x$corrected_ols_coef, x$corrected_ols_se))
   cat("Use summary() for detailed results.\n")
+  invisible(x)
 }
 
 #' Plot method for lpmec_onerun objects
@@ -125,6 +126,7 @@ print.lpmec <- function(x, ...) {
   cat(sprintf("Bayesian OLS (Outer): %.3f (SE: %.3f)\n", x$bayesian_ols_coef_outer_normed,
               x$bayesian_ols_se_outer_normed))
   cat("Use summary() for detailed results.\n")
+  invisible(x)
 }
 
 #' Plot method for lpmec objects

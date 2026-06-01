@@ -282,7 +282,11 @@ lpmec_onerun <- function(Y,
 
   # Warn about potential issues
   n_unique_obs <- length(unique(observables_groupings))
-  if (n_unique_obs < 4) {
+  if (n_unique_obs < 2L) {
+    stop("At least 2 unique observable groupings are required for split-half estimation. Received: ",
+         n_unique_obs)
+  }
+  if (n_unique_obs < 4L) {
     warning("Only ", n_unique_obs, " unique observable groupings found. ",
             "Split-half estimation may be unreliable with fewer than 4 groupings.")
   }
@@ -316,23 +320,29 @@ lpmec_onerun <- function(Y,
     if(split_ == ""){ items.split_ <- 1:length(observables_groupings) }
     if(split_ == "1"){ items.split_ <- (1:length(observables_groupings))[observables_groupings %in% items.split1_names] }
     if(split_ == "2"){ items.split_ <- (1:length(observables_groupings))[observables_groupings %in% items.split2_names] }
+    if (length(items.split_) < 1L) {
+      stop("Split-half partition produced no observable columns; check 'observables_groupings'.")
+    }
     
     # estimating ideal points
     if(make_observables_groupings == FALSE){
-      observables_ <- observables[,items.split_]
+      observables_ <- observables[, items.split_, drop = FALSE]
     }
     if(make_observables_groupings == TRUE){
-      observables_ <- do.call(cbind,unlist(apply(observables[,items.split_],2,function(zer){
-        list( model.matrix(~0+as.factor(zer))[,-1] )}),recursive = FALSE))
+      observables_ <- .lpmec_expand_observables_groupings(
+        observables[, items.split_, drop = FALSE],
+        label = paste0("'observables' split ", ifelse(split_ == "", "full", split_))
+      )
     }
     
     if(estimation_method == "pca"){
         # For PCA, we typically want numeric inputs only
-        x_init <- scale(apply( observables_, 1, function(x){ mean(f2n(x), na.rm=TRUE)})) * INIT_SCALER
-        observables__ <- apply(as.matrix(observables_), 2, f2n)
-        
-        # do not zero impute
-        #observables__[is.na(observables__)] <- 0
+        pca_inputs <- .lpmec_prepare_pca_observables(
+          observables_,
+          label = paste0("'observables' split ", ifelse(split_ == "", "full", split_))
+        )
+        x_init <- scale(pca_inputs$row_reference) * INIT_SCALER
+        observables__ <- pca_inputs$matrix
         
         # Run PCA on centered + scaled columns:
         pca_out <- prcomp(observables__, center = TRUE, scale. = TRUE)
@@ -903,7 +913,6 @@ lpmec_onerun <- function(Y,
               lpmec_env$numpyro$diagnostics$effective_sample_size(# Computes effective sample size of input x, where the first dimension of x is chain dimension and the second dimension of x is draw dimension.
                 lpmec_env$jnp$reshape( PosteriorDraws$ability, list(mcmc_control$n_chains, ai(mcmc_control$n_samples_mcmc/mcmc_control$n_thin_by), N))
                 ), na.rm=T)/(ai(mcmc_control$n_chains*mcmc_control$n_samples_mcmc/mcmc_control$n_thin_by) ) ))
-      plot(lpmec_env$np$array(PosteriorDraws$ability[1,,1,1]))
       if(estimation_method == "mcmc" & split_ == ""){ # method of compositions 
         # OuterNormed - this is what ideal does 
         RescaledAbilities_OuterNormed  <- (ExtractAbil(PosteriorDraws$ability)-mean(AbilityMean))/sd(AbilityMean)
@@ -1029,7 +1038,11 @@ lpmec_onerun <- function(Y,
     }
     
     if(split_ %in% c("1","2")){
-      if(cor(x.est_, x_est_past) < 0){
+      split_cor <- suppressWarnings(cor(x.est_, x_est_past, use = "pairwise.complete.obs"))
+      if (!is.finite(split_cor)) {
+        stop("Cannot orient split-half latent estimates because their correlation is not finite.")
+      }
+      if(split_cor < 0){
         x.est_  <- -1*x.est_
       }
     }

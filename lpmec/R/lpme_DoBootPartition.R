@@ -293,7 +293,11 @@ lpmec <- function(Y,
 
   # Warn about potential issues with small samples
   n_unique_groups <- length(unique(observables_groupings))
-  if (n_unique_groups < 4) {
+  if (n_unique_groups < 2L) {
+    stop("At least 2 unique observable groupings are required for split-half estimation. Received: ",
+         n_unique_groups)
+  }
+  if (n_unique_groups < 4L) {
     warning("Only ", n_unique_groups, " unique observable groupings found. ",
             "Split-half estimation may be unreliable with fewer than 4 groupings.")
   }
@@ -346,7 +350,7 @@ lpmec <- function(Y,
       message(sprintf("{booti_ %s of %s} -- {parti_ %s of %s}", booti_, n_boot+1, parti_, n_partition))
       
       # Run single analysis
-      rungood <- FALSE; runcounter <- 0; while(!rungood){ 
+      rungood <- FALSE; runcounter <- 0; last_run_error <- NULL; while(!rungood){
         runcounter <- runcounter + 1 
         LatentRunResults_ <- try(lpmec_onerun(
           Y[boot_indices],
@@ -360,8 +364,20 @@ lpmec <- function(Y,
           conda_env = conda_env,
           conda_env_required = conda_env_required
         ),T) 
-        if(!"try-error" %in% class(LatentRunResults_)){ rungood <- TRUE }
-        if(runcounter > 100){ stop("100 partition attempts failed... check data") }
+        if(!"try-error" %in% class(LatentRunResults_)){
+          rungood <- TRUE
+        } else {
+          last_condition <- attr(LatentRunResults_, "condition")
+          last_run_error <- if (!is.null(last_condition)) {
+            conditionMessage(last_condition)
+          } else {
+            as.character(LatentRunResults_)
+          }
+          if(runcounter >= 100){
+            stop("100 partition attempts failed... check data. Last error: ",
+                 last_run_error, call. = FALSE)
+          }
+        }
       }
       
       

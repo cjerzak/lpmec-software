@@ -4,6 +4,116 @@ f2a <- function(x){lpmec_env$jnp$array(x,lpmec_env$jnp$float32)}
 ai <- as.integer
 lpmec_env <- new.env( parent = emptyenv() )
 
+.lpmec_numeric_observable_matrix <- function(observables, label = "'observables'") {
+  if (!is.data.frame(observables) && !is.matrix(observables)) {
+    stop(label, " must be a data.frame or matrix.")
+  }
+
+  observables_df <- as.data.frame(observables)
+  values <- suppressWarnings(
+    as.numeric(as.character(unlist(observables_df, use.names = FALSE)))
+  )
+  out <- matrix(
+    values,
+    nrow = nrow(observables_df),
+    ncol = ncol(observables_df)
+  )
+  colnames(out) <- colnames(observables_df)
+  out[!is.finite(out)] <- NA_real_
+  out
+}
+
+.lpmec_prepare_pca_observables <- function(observables, label = "'observables'") {
+  obs_numeric <- .lpmec_numeric_observable_matrix(observables, label = label)
+
+  col_sds <- apply(obs_numeric, 2, function(x) {
+    observed <- x[!is.na(x)]
+    if (length(observed) < 2L) {
+      return(NA_real_)
+    }
+    stats::sd(observed)
+  })
+  informative <- is.finite(col_sds) & col_sds > 0
+
+  if (any(!informative)) {
+    dropped_names <- colnames(obs_numeric)[!informative]
+    if (is.null(dropped_names)) {
+      dropped_names <- which(!informative)
+    }
+    warning(
+      "Dropping ", sum(!informative), " non-informative PCA column(s): ",
+      paste(dropped_names, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  if (!any(informative)) {
+    stop(label, " has no informative columns for PCA after dropping all-NA and zero-variance columns.")
+  }
+
+  obs_kept <- obs_numeric[, informative, drop = FALSE]
+  rows_without_observed_values <- rowSums(!is.na(obs_kept)) == 0L
+  if (any(rows_without_observed_values)) {
+    stop(label, " has rows with no observed values in informative columns; PCA cannot impute those rows.")
+  }
+
+  row_reference <- rowMeans(obs_kept, na.rm = TRUE)
+  col_means <- colMeans(obs_kept, na.rm = TRUE)
+  missing_idx <- which(is.na(obs_kept), arr.ind = TRUE)
+  if (nrow(missing_idx) > 0L) {
+    obs_kept[missing_idx] <- col_means[missing_idx[, "col"]]
+  }
+
+  list(
+    matrix = obs_kept,
+    row_reference = row_reference,
+    kept_columns = which(informative),
+    dropped_columns = which(!informative)
+  )
+}
+
+.lpmec_expand_observables_groupings <- function(observables, label = "'observables'") {
+  observables_df <- as.data.frame(observables)
+  expanded <- list()
+  skipped <- character(0)
+
+  for (j in seq_len(ncol(observables_df))) {
+    col_name <- colnames(observables_df)[j]
+    if (is.null(col_name) || is.na(col_name) || !nzchar(col_name)) {
+      col_name <- paste0("V", j)
+    }
+    factor_values <- as.factor(observables_df[[j]])
+    if (nlevels(factor_values) < 2L) {
+      skipped <- c(skipped, col_name)
+      next
+    }
+
+    factor_levels <- levels(factor_values)
+    mm <- sapply(factor_levels, function(level) {
+      as.integer(factor_values == level)
+    })
+    colnames(mm) <- paste0(col_name, factor_levels)
+    if (ncol(mm) < 2L) {
+      skipped <- c(skipped, col_name)
+      next
+    }
+    expanded[[length(expanded) + 1L]] <- mm[, -1L, drop = FALSE]
+  }
+
+  if (length(skipped) > 0L) {
+    warning(
+      "Skipping ", length(skipped),
+      " one-level observable column(s) during dummy expansion: ",
+      paste(skipped, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  if (length(expanded) < 1L) {
+    stop(label, " has no columns with at least two levels for dummy expansion.")
+  }
+
+  do.call(cbind, expanded)
+}
+
 .lpmec_validate_partition_aggregation_probs <- function(partition_aggregation_probs) {
   if (!is.numeric(partition_aggregation_probs) ||
       length(partition_aggregation_probs) != 2L ||
