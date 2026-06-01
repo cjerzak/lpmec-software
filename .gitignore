@@ -2,12 +2,18 @@
 .Rhistory
 .RData
 .Ruserdata
-.Rd2pdf94308
-.Rd2pdf94010
+.Rd2pdf*
 .DS_Store
 .Rapp.history
 CLAUDE.md
 Rplots.pdf
+
+# R package build/check artifacts
+/*.Rcheck/
+/*.tar.gz
+
+# Local tool state
+/.claude/
 
 # Reports directory
 /reports/
