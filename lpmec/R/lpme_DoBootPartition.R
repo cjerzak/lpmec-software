@@ -45,9 +45,19 @@
 #'     iterations before samples are collected. Default is \code{500}.}
 #'   \item{\code{n_samples_mcmc}}{Integer specifying the number of post-warmup MCMC
 #'     iterations to retain. Default is \code{1000}.}
+#'   \item{\code{batch_size}}{Integer row subsample size used when
+#'     \code{subsample_method = "batch"} with the NumPyro backend. Must be
+#'     between \code{1} and \code{nrow(observables) - 1}. Default is
+#'     \code{512}.}
+#'   \item{\code{subsample_method}}{Character string for NumPyro likelihood
+#'     evaluation. Use \code{"full"} (default) for all rows or \code{"batch"}
+#'     for experimental HMCECS row subsampling with \code{batch_size}.}
 #'   \item{\code{chain_method}}{Character string passed to numpyro specifying how to run
 #'     multiple chains. Options: \code{"parallel"} (default), \code{"sequential"},
 #'     or \code{"vectorized"}.}
+#'   \item{\code{anchor_parameter_id}}{Optional 1-based observable-column index
+#'     used by NumPyro MCMC backends to anchor item difficulty orientation. If
+#'     omitted or \code{NULL}, automatic orientation is used.}
 #'   \item{\code{n_thin_by}}{Integer indicating the thinning factor for MCMC samples.
 #'     Default is \code{1}.}
 #'   \item{\code{n_chains}}{Integer specifying the number of parallel MCMC chains to run.
@@ -58,7 +68,8 @@
 #'     and residual-sigma priors by \code{sd(Y)}. Use \code{calibration = "legacy"}
 #'     to restore the previous unit-scale priors, or provide numeric overrides for
 #'     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
-#'     \code{slope_sd}, and \code{sigma_sd}.}
+#'     \code{slope_sd}, and \code{sigma_sd}. The optional \code{scale_floor}
+#'     sets the minimum scale used for data-calibrated priors.}
 #'   \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
 #'     priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
 #'     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.
@@ -74,35 +85,29 @@
 #'
 #' @return A list containing various estimates and statistics (in snake_case):
 #' \itemize{
-#'   \item \code{ols_coef}: Coefficient from naive OLS regression.
-#'   \item \code{ols_se}: Standard error of naive OLS coefficient.
-#'   \item \code{ols_tstat}: T-statistic of naive OLS coefficient.
-#'   \item \code{iv_coef}: Coefficient from instrumental variable (IV) regression.
-#'   \item \code{iv_se}: Standard error of IV regression coefficient.
-#'   \item \code{iv_tstat}: T-statistic of IV regression coefficient.
-#'   \item \code{corrected_iv_coef}: IV regression coefficient corrected for measurement error.
-#'   \item \code{corrected_iv_se}: Standard error of the corrected IV coefficient (currently \code{NA}).
-#'   \item \code{corrected_iv_tstat}: T-statistic of the corrected IV coefficient.
-#'   \item \code{var_est}: Estimated variance of the measurement error (split-half variance).
-#'   \item \code{corrected_ols_coef}: OLS coefficient corrected for measurement error.
-#'   \item \code{corrected_ols_se}: Standard error of the corrected OLS coefficient (currently \code{NA}).
-#'   \item \code{corrected_ols_tstat}: T-statistic of the corrected OLS coefficient (currently \code{NA}).
-#'   \item \code{corrected_ols_coef_alt}: Alternative corrected OLS coefficient (if applicable).
-#'   \item \code{corrected_ols_se_alt}: Standard error for the alternative corrected OLS coefficient (if applicable).
-#'   \item \code{corrected_ols_tstat_alt}: T-statistic for the alternative corrected OLS coefficient (if applicable).
-#'   \item \code{bayesian_ols_coef_outer_normed}: Posterior mean of the OLS coefficient under MCMC, 
-#'     after normalizing by the overall sample standard deviation.
-#'   \item \code{bayesian_ols_se_outer_normed}: Posterior standard error corresponding to \code{bayesian_ols_coef_outer_normed}.
-#'   \item \code{bayesian_ols_tstat_outer_normed}: T-statistic for \code{bayesian_ols_coef_outer_normed}.
-#'   \item \code{bayesian_ols_coef_inner_normed}: Posterior mean of the OLS coefficient under MCMC, 
-#'     after normalizing each posterior draw individually.
-#'   \item \code{bayesian_ols_se_inner_normed}: Posterior standard error corresponding to \code{bayesian_ols_coef_inner_normed}.
-#'   \item \code{bayesian_ols_tstat_inner_normed}: T-statistic for \code{bayesian_ols_coef_inner_normed}.
-#'   \item \code{m_stage_1_erv}: Extreme robustness value (ERV) for the first-stage regression 
-#'     (\code{x_est2} on \code{x_est1}), if computed.
-#'   \item \code{m_reduced_erv}: ERV for the reduced model (\code{Y} on \code{x_est1}), if computed.
-#'   \item \code{x_est1}: First set of latent variable estimates.
-#'   \item \code{x_est2}: Second set of latent variable estimates.
+#'   \item Naive, IV, corrected IV, and corrected OLS estimates:
+#'     \code{ols_*}, \code{iv_*}, \code{corrected_iv_*}, and
+#'     \code{corrected_ols_*}. Bootstrap uncertainty summaries use suffixes
+#'     \code{_se}, \code{_lower}, \code{_upper}, and \code{_tstat} where
+#'     applicable.
+#'   \item \code{var_est_split} and \code{var_est_split_se}: Aggregated
+#'     split-half measurement-error variance and, when bootstrap draws are
+#'     available, its bootstrap standard error.
+#'   \item \code{bayesian_ols_*_outer_normed} and
+#'     \code{bayesian_ols_*_inner_normed}: MCMC coefficient summaries. The
+#'     \code{*_parametric} standard-error fields retain within-run posterior
+#'     uncertainty, while the non-parametric standard-error and interval fields
+#'     summarize bootstrap variation.
+#'   \item \code{m_stage_1_erv*} and \code{m_reduced_erv*}: Extreme robustness
+#'     values and bootstrap uncertainty summaries for the first-stage and
+#'     reduced-form regressions.
+#'   \item \code{mcmc_joint2_*}: NumPyro \code{"mcmc_joint2"} diagnostics,
+#'     including effective-sample-size percentages, maximum R-hat, divergent
+#'     transitions, mean accept probability, and orientation diagnostics.
+#'   \item \code{x_est1} and \code{x_est2}: Split-half latent variable
+#'     estimates from the original sample.
+#'   \item \code{Intermediary_*}: Per-run original-sample and bootstrap
+#'     outputs, returned only when \code{return_intermediaries = TRUE}.
 #' }
 #'
 #' @details

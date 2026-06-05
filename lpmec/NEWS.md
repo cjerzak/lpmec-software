@@ -22,6 +22,8 @@
 
 ## Documentation
 * Fixed documentation to correctly indicate `pscl` as the default MCMC backend.
+* Refreshed public documentation for advanced estimation methods, MCMC controls,
+  return-value fields, and current arXiv links.
 * Updated version year in CITATION file.
 
 ## Previous Changes

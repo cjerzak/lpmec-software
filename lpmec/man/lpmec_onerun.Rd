@@ -51,9 +51,19 @@ lpmec_onerun(
     iterations before samples are collected. Default is \code{500}.}
   \item{\code{n_samples_mcmc}}{Integer specifying the number of post-warmup MCMC
     iterations to retain. Default is \code{1000}.}
+  \item{\code{batch_size}}{Integer row subsample size used when
+    \code{subsample_method = "batch"} with the NumPyro backend. Must be
+    between \code{1} and \code{nrow(observables) - 1}. Default is
+    \code{512}.}
+  \item{\code{subsample_method}}{Character string for NumPyro likelihood
+    evaluation. Use \code{"full"} (default) for all rows or \code{"batch"}
+    for experimental HMCECS row subsampling with \code{batch_size}.}
   \item{\code{chain_method}}{Character string passed to numpyro specifying how to run
     multiple chains. Options: \code{"parallel"} (default), \code{"sequential"},
     or \code{"vectorized"}.}
+  \item{\code{anchor_parameter_id}}{Optional 1-based observable-column index
+    used by NumPyro MCMC backends to anchor item difficulty orientation. If
+    omitted or \code{NULL}, automatic orientation is used.}
   \item{\code{n_thin_by}}{Integer indicating the thinning factor for MCMC samples.
     Default is \code{1}.}
   \item{\code{n_chains}}{Integer specifying the number of parallel MCMC chains to run.
@@ -64,7 +74,8 @@ lpmec_onerun(
     and residual-sigma priors by \code{sd(Y)}. Use \code{calibration = "legacy"}
     to restore the previous unit-scale priors, or provide numeric overrides for
     \code{intercept_mean}, \code{intercept_sd}, \code{slope_mean},
-    \code{slope_sd}, and \code{sigma_sd}.}
+    \code{slope_sd}, and \code{sigma_sd}. The optional \code{scale_floor}
+    sets the minimum scale used for data-calibrated priors.}
   \item{\code{joint2_prior}}{List controlling \code{"mcmc_joint2"}
     priors. Defaults are \code{lambda_mean = 0}, \code{lambda_sd = 2},
     \code{psi_shape = 0.0005}, and \code{psi_scale = 0.0005}.
@@ -85,28 +96,24 @@ Default is \code{FALSE}.}
 \value{
 A list containing various estimates and statistics:
 \itemize{
-  \item \code{ols_coef}: Coefficient from naive OLS regression
-  \item \code{ols_se}: Standard error of naive OLS coefficient
-  \item \code{ols_tstat}: T-statistic of naive OLS coefficient
-  \item \code{iv_coef_a}: IV coefficient using first split as instrument
-  \item \code{iv_coef_b}: IV coefficient using second split as instrument
-  \item \code{iv_coef}: Averaged IV coefficient from both splits
-  \item \code{iv_se}: Standard error of IV regression coefficient
-  \item \code{iv_tstat}: T-statistic of IV regression coefficient
-  \item \code{corrected_iv_coef_a}: Corrected IV coefficient using first split as instrument
-  \item \code{corrected_iv_coef_b}: Corrected IV coefficient using second split as instrument
-  \item \code{corrected_iv_coef}: Averaged corrected IV coefficient from both splits
-  \item \code{corrected_iv_se}: Standard error of corrected IV coefficient
-  \item \code{corrected_iv_tstat}: T-statistic of corrected IV coefficient
-  \item \code{corrected_ols_coef_a}: Corrected OLS coefficient using first split
-  \item \code{corrected_ols_coef_b}: Corrected OLS coefficient using second split
-  \item \code{corrected_ols_coef}: Averaged corrected OLS coefficient from both splits
-  \item \code{corrected_ols_se}: Standard error of corrected OLS coefficient (currently NA)
-  \item \code{corrected_ols_tstat}: T-statistic of corrected OLS coefficient (currently NA)
-  \item \code{corrected_ols_coef_alt}: Alternative corrected OLS coefficient (currently NA)
-  \item \code{var_est_split}: Estimated variance of the measurement error
-  \item \code{x_est1}: First set of latent variable estimates
-  \item \code{x_est2}: Second set of latent variable estimates
+  \item Naive, IV, corrected IV, and corrected OLS estimates:
+    \code{ols_*}, \code{iv_*}, \code{corrected_iv_*}, and
+    \code{corrected_ols_*}. Split-specific estimates use suffixes
+    \code{_a} and \code{_b}.
+  \item \code{var_est_split}: Estimated split-half measurement-error
+    variance.
+  \item \code{bayesian_ols_*_outer_normed} and
+    \code{bayesian_ols_*_inner_normed}: MCMC coefficient summaries when an
+    MCMC method is used; otherwise \code{NA}.
+  \item \code{m_stage_1_erv} and \code{m_reduced_erv}: Extreme robustness
+    values for the first-stage and reduced-form regressions.
+  \item \code{outcome_prior_*}: Resolved outcome-prior values used by
+    NumPyro joint outcome models.
+  \item \code{mcmc_joint2_*}: NumPyro \code{"mcmc_joint2"} diagnostics,
+    including effective-sample-size percentages, maximum R-hat, divergent
+    transitions, mean accept probability, and orientation diagnostics.
+  \item \code{x_est1} and \code{x_est2}: Split-half latent variable
+    estimates.
 }
 }
 \description{
@@ -119,9 +126,12 @@ and then applies various correction methods including OLS correction and instrum
 }
 \section{Standard Errors}{
 
-The following standard errors and t-statistics are currently returned as \code{NA} because
-their analytical derivation is not yet implemented:
+The following single-run standard errors and t-statistics are currently
+returned as \code{NA} because their analytical derivation is not yet
+implemented:
 \itemize{
+  \item \code{corrected_iv_se}: Standard error for the corrected IV
+    coefficient
   \item \code{corrected_ols_se}: Standard error for the corrected OLS coefficient
   \item \code{corrected_ols_tstat}: T-statistic for the corrected OLS coefficient
   \item \code{corrected_ols_coef_alt}: Alternative corrected OLS coefficient

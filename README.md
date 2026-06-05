@@ -47,21 +47,21 @@ The correlation-corrected estimates computed here by `lpmec` closely track the p
 
 ### Bias \& Variance 
 
-<a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
+<a href="https://arxiv.org/abs/2507.22218/#gh-light-mode-only">
   <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2.webp#gh-light-mode-only" alt="Figure – light" width="500">
 </a>
 
-<a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
+<a href="https://arxiv.org/abs/2507.22218/#gh-dark-mode-only">
   <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p2_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="500">
 </a>
 
 ### Coverage 
 
-<a href="https://arxiv.org/abs/2501.07642/#gh-light-mode-only">
+<a href="https://arxiv.org/abs/2507.22218/#gh-light-mode-only">
   <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5.webp#gh-light-mode-only" alt="Figure – light" width="350">
 </a>
 
-<a href="https://arxiv.org/abs/2501.07642/#gh-dark-mode-only">
+<a href="https://arxiv.org/abs/2507.22218/#gh-dark-mode-only">
   <img src="https://connorjerzak.com/wp-content/uploads/2026/01/p5_dark.webp#gh-dark-mode-only" alt="Figure – dark" width="350">
 </a>
 
@@ -143,10 +143,13 @@ print(results)
 | `pca` | Principal component | base R |
 | `averaging` | Simple row means | base R |
 | `mcmc` | Full Bayesian MCMC | pscl or NumPyro |
+| `mcmc_joint` | Joint Bayesian latent-variable and outcome model | NumPyro |
+| `mcmc_joint2` | NumPyro mixed factor-analysis benchmark | NumPyro |
+| `mcmc_overimputation` | MCMC with over-imputation correction | pscl or NumPyro |
 | `custom` | User-provided function | - |
 
 ## Documentation
-- [Introduction Vignette](https://github.com/cjerzak/lpmec-software/blob/main/lpmec/vignettes/IntroVignette.Rmd) - Complete walkthrough with real data
+- [Introduction Vignette](https://github.com/cjerzak/lpmec-software/blob/main/lpmec/vignettes/IntroVignette.Rmd) - Simulated-data walkthrough of the basic workflow
 - Run `?lpmec` after installation for function documentation
 
 # Contributing

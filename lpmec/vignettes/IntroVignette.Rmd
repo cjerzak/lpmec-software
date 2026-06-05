@@ -78,13 +78,22 @@ plot(results)
 The package supports multiple estimation approaches:
 
 ```{r, eval=TRUE}
-# Bayesian MCMC estimation (requires Python environment setup)
+# Bayesian MCMC estimation with the default pscl backend
 if(FALSE){
 mcmc_results <- lpmec(
   Y = Yobs,
   observables = as.data.frame(ObservablesMat),
+  estimation_method = "mcmc"
+)
+
+# To use the optional NumPyro backend, first run build_backend()
+# or provide your own Python environment with JAX and NumPyro.
+numpyro_results <- lpmec(
+  Y = Yobs,
+  observables = as.data.frame(ObservablesMat),
   estimation_method = "mcmc",
-  conda_env = "lpmec"  # Specify your conda environment
+  mcmc_control = list(backend = "numpyro"),
+  conda_env = "lpmec"
 )
 }
 ```
