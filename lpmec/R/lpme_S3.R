@@ -170,3 +170,86 @@ plot.lpmec <- function(x, type = "latent", ...) {
     stop("Invalid plot type. Choose 'latent' or 'coefficients'.")
   }
 }
+
+#' Summary method for lpmec_multivariate_onerun objects
+#'
+#' @param object An object of class \code{lpmec_multivariate_onerun}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A data frame of latent-predictor coefficient estimates.
+#'
+#' @export
+summary.lpmec_multivariate_onerun <- function(object, ...) {
+  coef_df <- data.frame(
+    OLS = object$ols_coef,
+    IV = object$iv_coef,
+    Corrected_IV = object$corrected_iv_coef,
+    Split_Correlation = object$split_correlation,
+    First_Stage_F = object$first_stage_fstat,
+    row.names = object$latent_names
+  )
+
+  cat("Single-Run Multivariate LPMEC Summary\n")
+  cat("=====================================\n")
+  print(coef_df)
+  invisible(coef_df)
+}
+
+#' Print method for lpmec_multivariate_onerun objects
+#'
+#' @param x An object of class \code{lpmec_multivariate_onerun}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return The input object \code{x}, returned invisibly.
+#'
+#' @export
+print.lpmec_multivariate_onerun <- function(x, ...) {
+  cat("Single-Run Multivariate LPMEC Results\n")
+  cat("-------------------------------------\n")
+  cat(sprintf("Latent predictors: %s\n", paste(x$latent_names, collapse = ", ")))
+  cat("Use summary() for coefficient details.\n")
+  invisible(x)
+}
+
+#' Summary method for lpmec_multivariate objects
+#'
+#' @param object An object of class \code{lpmec_multivariate}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return A data frame of aggregated latent-predictor coefficient estimates.
+#'
+#' @export
+summary.lpmec_multivariate <- function(object, ...) {
+  coef_df <- data.frame(
+    OLS = object$ols_coef,
+    OLS_SE = object$ols_se,
+    Corrected_IV = object$corrected_iv_coef,
+    Corrected_IV_SE = object$corrected_iv_se,
+    Corrected_IV_Lower = object$corrected_iv_lower,
+    Corrected_IV_Upper = object$corrected_iv_upper,
+    Split_Correlation = object$split_correlation,
+    First_Stage_F = object$first_stage_fstat,
+    row.names = object$latent_names
+  )
+
+  cat("Multivariate LPMEC Summary\n")
+  cat("==========================\n")
+  print(coef_df)
+  invisible(coef_df)
+}
+
+#' Print method for lpmec_multivariate objects
+#'
+#' @param x An object of class \code{lpmec_multivariate}.
+#' @param ... Additional arguments (currently unused).
+#'
+#' @return The input object \code{x}, returned invisibly.
+#'
+#' @export
+print.lpmec_multivariate <- function(x, ...) {
+  cat("Multivariate LPMEC Results\n")
+  cat("--------------------------\n")
+  cat(sprintf("Latent predictors: %s\n", paste(x$latent_names, collapse = ", ")))
+  cat("Use summary() for coefficient details.\n")
+  invisible(x)
+}

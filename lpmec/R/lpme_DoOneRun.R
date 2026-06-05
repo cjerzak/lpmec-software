@@ -1152,7 +1152,8 @@ lpmec_onerun <- function(Y,
     "mcmc_joint2_orientation_n_flipped" = mcmc_joint2_orientation_n_flipped,
     "mcmc_joint2_orientation_prop_flipped" = mcmc_joint2_orientation_prop_flipped,
     "mcmc_joint2_orientation_min_abs_cor" = mcmc_joint2_orientation_min_abs_cor,
-    
+
+    "x_est" = x.est,
     "x_est1" = x.est1,
     "x_est2" = x.est2
   )
