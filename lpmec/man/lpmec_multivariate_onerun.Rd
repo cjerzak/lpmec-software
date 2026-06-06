@@ -2,8 +2,6 @@
 % Please edit documentation in R/lpme_Multivariate.R
 \name{lpmec_multivariate_onerun}
 \alias{lpmec_multivariate_onerun}
-\alias{print.lpmec_multivariate_onerun}
-\alias{summary.lpmec_multivariate_onerun}
 \title{Multivariate latent-predictor measurement-error correction}
 \usage{
 lpmec_multivariate_onerun(
@@ -15,8 +13,8 @@ lpmec_multivariate_onerun(
   estimation_method = "em",
   latent_estimation_fn = NULL,
   ordinal = FALSE,
-  mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc =
-    1000L, batch_size = 512L, chain_method = "parallel", subsample_method = "full",
+  mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc = 1000L,
+    batch_size = 512L, chain_method = "parallel", subsample_method = "full",
     anchor_parameter_id = NULL, n_thin_by = 1L, n_chains = 2L, outcome_prior =
     list(calibration = "data"), joint2_prior = list()),
   min_split_correlation = 0,
@@ -56,9 +54,9 @@ correction is defined only for positive componentwise correlations.}
 }
 \value{
 A list of class \code{lpmec_multivariate_onerun} containing
-uncorrected OLS coefficients, uncorrected IV coefficients, corrected IV
-coefficients, split-half correlations, first-stage diagnostics, and latent
-score matrices.
+  uncorrected OLS coefficients, uncorrected IV coefficients, corrected IV
+  coefficients, split-half correlations, first-stage diagnostics, and latent
+  score matrices.
 }
 \description{
 Implements the split-indicator multivariate IV correction for several latent

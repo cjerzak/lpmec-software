@@ -2,8 +2,6 @@
 % Please edit documentation in R/lpme_Multivariate.R
 \name{lpmec_multivariate}
 \alias{lpmec_multivariate}
-\alias{print.lpmec_multivariate}
-\alias{summary.lpmec_multivariate}
 \title{Aggregated multivariate latent-predictor correction}
 \usage{
 lpmec_multivariate(
@@ -21,8 +19,8 @@ lpmec_multivariate(
   estimation_method = "em",
   latent_estimation_fn = NULL,
   ordinal = FALSE,
-  mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc =
-    1000L, batch_size = 512L, chain_method = "parallel", subsample_method = "full",
+  mcmc_control = list(backend = "pscl", n_samples_warmup = 500L, n_samples_mcmc = 1000L,
+    batch_size = 512L, chain_method = "parallel", subsample_method = "full",
     anchor_parameter_id = NULL, n_thin_by = 1L, n_chains = 2L, outcome_prior =
     list(calibration = "data"), joint2_prior = list()),
   min_split_correlation = 0,
@@ -78,8 +76,8 @@ correction is defined only for positive componentwise correlations.}
 }
 \value{
 A list of class \code{lpmec_multivariate} containing aggregated
-uncorrected OLS and corrected IV latent coefficients with bootstrap
-uncertainty summaries when \code{n_boot >= 1}.
+  uncorrected OLS and corrected IV latent coefficients with bootstrap
+  uncertainty summaries when \code{n_boot >= 1}.
 }
 \description{
 Runs \code{\link{lpmec_multivariate_onerun}} over repeated split-half
