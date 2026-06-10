@@ -65,6 +65,12 @@
 #'   must be strictly used. If \code{TRUE}, an error is thrown if the environment is not found.
 #'   Default is \code{FALSE}.
 #' @param ordinal Logical indicating whether the observable indicators are ordinal (TRUE) or binary (FALSE).
+#' @param partition Optional fixed split-half partition. When supplied, must be
+#'   a list with \code{split1_names} and \code{split2_names} entries naming
+#'   observable groups. Default is \code{NULL}, which preserves the historical
+#'   one-off random split behavior.
+#' @param partition_id Optional identifier for \code{partition}; stored in the
+#'   returned object for bootstrap diagnostics.
 #'
 #' @return A list containing various estimates and statistics:
 #' \itemize{
@@ -156,7 +162,9 @@ lpmec_onerun <- function(Y,
                             joint2_prior = list()),
                           ordinal = FALSE,
                           conda_env = "lpmec",
-                          conda_env_required = FALSE){
+                          conda_env_required = FALSE,
+                          partition = NULL,
+                          partition_id = NULL){
   # Merge user-provided mcmc_control with defaults
   # This ensures partial user specifications don't cause missing parameter errors
   default_mcmc_control <- list(
@@ -323,9 +331,22 @@ lpmec_onerun <- function(Y,
   mcmc_joint2_orientation_n_flipped <- NA_real_
   mcmc_joint2_orientation_prop_flipped <- NA_real_
   mcmc_joint2_orientation_min_abs_cor <- NA_real_
-  items.split1_names <- sample(unique(observables_groupings), 
-                               size = floor(length(unique(observables_groupings))/2), replace=FALSE)
-  items.split2_names <- unique(observables_groupings)[! (observables_groupings %in% items.split1_names)]
+  if (!is.null(partition)) {
+    fixed_partition <- .lpmec_validate_partition(
+      partition = partition,
+      groups = unique(observables_groupings),
+      require_balanced = TRUE
+    )
+    items.split1_names <- fixed_partition$split1_names
+    items.split2_names <- fixed_partition$split2_names
+    if (is.null(partition_id)) {
+      partition_id <- fixed_partition$partition_id
+    }
+  } else {
+    items.split1_names <- sample(unique(observables_groupings),
+                                 size = floor(length(unique(observables_groupings))/2), replace=FALSE)
+    items.split2_names <- unique(observables_groupings)[! (observables_groupings %in% items.split1_names)]
+  }
   for(split_ in c("", "1", "2")){
     if(split_ == ""){ items.split_ <- 1:length(observables_groupings) }
     if(split_ == "1"){ items.split_ <- (1:length(observables_groupings))[observables_groupings %in% items.split1_names] }
@@ -1066,6 +1087,9 @@ lpmec_onerun <- function(Y,
     }
   }
   # c(mean(x.est),sd(x.est))
+  split_correlation <- suppressWarnings(
+    cor(x.est1, x.est2, use = "pairwise.complete.obs")
+  )
   
   # simple linear reg 
   theOLS <- lm(Y ~ x.est)
@@ -1116,6 +1140,7 @@ lpmec_onerun <- function(Y,
     "corrected_iv_se" = NA,
     "corrected_iv_tstat" = Corrected_IVRegCoef / coef(summary(IVStage2_a))[2, 2],
     "var_est_split" = var(x.est1 - x.est2) / 2,  # var_est_split
+    "split_correlation" = split_correlation,
     
     "corrected_ols_coef_a" = Corrected_OLSCoef_a, 
     "corrected_ols_coef_b" = Corrected_OLSCoef_b, 
@@ -1155,7 +1180,10 @@ lpmec_onerun <- function(Y,
 
     "x_est" = x.est,
     "x_est1" = x.est1,
-    "x_est2" = x.est2
+    "x_est2" = x.est2,
+    "partition_id" = if (is.null(partition_id)) NA_character_ else as.character(partition_id),
+    "split1_names" = items.split1_names,
+    "split2_names" = items.split2_names
   )
     class(results) <- "lpmec_onerun"
     return( results ) 

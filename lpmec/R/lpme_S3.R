@@ -102,6 +102,19 @@ summary.lpmec <- function(object, ...) {
 
   cat("Latent Predictor Measurement Error Correction (LPMEC) Model Summary\n")
   cat("====================================================================\n")
+  if (!is.null(object$bootstrap_method)) {
+    cat(sprintf(
+      "Resampling: %s, m = %s (m/n = %.3f), CI = %s, replace = %s\n",
+      object$bootstrap_method,
+      object$boot_m,
+      object$boot_m_ratio,
+      object$boot_ci_type,
+      object$boot_replace
+    ))
+    if (!is.null(object$bootstrap_success_rate) && is.finite(object$bootstrap_success_rate)) {
+      cat(sprintf("Bootstrap success rate: %.3f\n", object$bootstrap_success_rate))
+    }
+  }
   print(coef_df)
   invisible(coef_df)
 }
@@ -121,6 +134,14 @@ summary.lpmec <- function(object, ...) {
 print.lpmec <- function(x, ...) {
   cat("Latent Predictor Measurement Error Correction (LPMEC) Model Results\n")
   cat("-------------------------------------------------------------------\n")
+  if (!is.null(x$bootstrap_method)) {
+    cat(sprintf(
+      "Resampling: %s, m = %s, CI = %s\n",
+      x$bootstrap_method,
+      x$boot_m,
+      x$boot_ci_type
+    ))
+  }
   cat(sprintf("Uncorrected Coefficient (OLS): %.3f (SE: %.3f)\n", x$ols_coef, x$ols_se))
   cat(sprintf("Corrected Coefficient: %.3f (SE: %.3f)\n", x$corrected_iv_coef, x$corrected_iv_se))
   cat(sprintf("Bayesian OLS (Outer): %.3f (SE: %.3f)\n", x$bayesian_ols_coef_outer_normed,

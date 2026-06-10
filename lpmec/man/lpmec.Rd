@@ -15,6 +15,19 @@ lpmec(
   partition_aggregation = "median",
   partition_aggregation_probs = c(0.01, 0.99),
   boot_basis = 1:length(Y),
+  bootstrap_method = c("n_out_of_n", "m_out_of_n", "subsampling", "auto"),
+  boot_m = NULL,
+  boot_m_rule = c("power", "fixed", "grid_stability"),
+  boot_m_exponent = 0.7,
+  boot_m_grid = NULL,
+  boot_m_replace = NULL,
+  boot_ci_type = c("auto", "root", "percentile"),
+  boot_alpha = 0.05,
+  boot_rate = c("sqrt_n", "custom"),
+  boot_tau = NULL,
+  partition_set = NULL,
+  fix_partitions = TRUE,
+  seed = NULL,
   return_intermediaries = TRUE,
   ordinal = FALSE,
   estimation_method = "em",
@@ -57,6 +70,48 @@ are clipped to these quantiles before averaging. For trimming, values outside
 these quantiles are dropped before averaging. Default is \code{c(0.01, 0.99)}.}
 
 \item{boot_basis}{Vector of indices or grouping variable for stratified bootstrap. Default is 1:length(Y).}
+
+\item{bootstrap_method}{Resampling method for uncertainty. Options are
+\code{"n_out_of_n"}, \code{"m_out_of_n"}, \code{"subsampling"}, and
+\code{"auto"}. The default \code{"n_out_of_n"} preserves historical row
+bootstrap behavior. Use \code{"subsampling"} or \code{"m_out_of_n"} with
+\code{boot_ci_type = "root"} for the formal nonsmooth median route.}
+
+\item{boot_m}{Optional exact m for m-out-of-n bootstrap or subsampling.}
+
+\item{boot_m_rule}{Rule used when \code{boot_m = NULL}. \code{"power"} uses
+\code{floor(n^boot_m_exponent)}; \code{"fixed"} requires \code{boot_m};
+\code{"grid_stability"} records a candidate grid and currently selects the
+grid value nearest the power-rule value.}
+
+\item{boot_m_exponent}{Exponent used by \code{boot_m_rule = "power"}.
+Default is \code{0.70}.}
+
+\item{boot_m_grid}{Optional candidate grid for m-sensitivity diagnostics.}
+
+\item{boot_m_replace}{Optional logical override for row replacement in
+m-out-of-n/subsampling. By default, replacement is used for
+\code{"n_out_of_n"} and \code{"m_out_of_n"}, and not used for
+\code{"subsampling"}.}
+
+\item{boot_ci_type}{Confidence interval type. \code{"auto"} uses percentile
+intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.}
+
+\item{boot_alpha}{Confidence interval tail probability. Default is 0.05.}
+
+\item{boot_rate}{Rate used by root-scaled intervals. The current formal path
+uses \code{"sqrt_n"}; \code{"custom"} requires \code{boot_tau}.}
+
+\item{boot_tau}{Optional function used when \code{boot_rate = "custom"}.}
+
+\item{partition_set}{Optional user-supplied fixed partition list. Each element
+must contain \code{split1_names}, \code{split2_names}, and optionally
+\code{partition_id}.}
+
+\item{fix_partitions}{Logical. If \code{TRUE}, draw or accept the finite
+partition set once and hold it fixed across original and resampled fits.}
+
+\item{seed}{Optional seed used for reproducible partitions and resamples.}
 
 \item{return_intermediaries}{Logical. If TRUE, returns intermediate results. Default is TRUE.}
 
@@ -164,6 +219,18 @@ analyzed with one or more split-half partitions. For each partition,
 it calls the \code{lpmec_onerun} function to estimate latent variables and apply various correction methods.
 The results are then aggregated across partitions and bootstrap iterations to produce final estimates
 and, when bootstrap draws are available, bootstrap standard errors.
+
+For \code{partition_aggregation = "median"}, the finite-partition median is
+a nonsmooth aggregation rule. The ordinary n-out-of-n row bootstrap remains
+available through \code{bootstrap_method = "n_out_of_n"} for backward
+compatibility. The formal nonsmooth-functional route is
+\code{bootstrap_method = "subsampling"} or \code{"m_out_of_n"} with
+\code{boot_ci_type = "root"}. In that route, the same realized partition set
+is held fixed across the original sample and all resamples, each resample
+reruns the full latent-score and correction pipeline, and confidence
+intervals invert the empirical distribution of
+\code{sqrt(m) * (theta_boot - theta_hat)} at the original \code{sqrt(n)}
+rate.
 }
 \examples{
 \donttest{

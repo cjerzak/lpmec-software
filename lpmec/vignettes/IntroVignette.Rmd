@@ -71,6 +71,35 @@ You can visualize the relationship between split-half estimates:
 plot(results)
 ```
 
+### Inference for Median Partition Aggregation
+
+The default partition aggregation is the finite-partition median. Because the
+median is nonsmooth, the formal route for uncertainty is subsampling or
+m-out-of-n bootstrap with root-scaled intervals:
+
+```{r, eval=FALSE}
+results_med <- lpmec(
+  Y = Yobs,
+  observables = as.data.frame(ObservablesMat),
+  n_boot = 499L,
+  n_partition = 10L,
+  estimation_method = "em",
+  partition_aggregation = "median",
+  bootstrap_method = "subsampling",
+  boot_m_rule = "power",
+  boot_m_exponent = 0.70,
+  boot_ci_type = "root",
+  seed = 123
+)
+```
+
+This path holds the same realized partition set fixed across the original
+sample and all subsamples, reruns the full latent-score and correction pipeline
+inside each subsample, and rescales the empirical root statistic from `m` to
+the original `n` rate. Inspect `boot_m`, `boot_m_ratio`,
+`valid_partitions_by_boot`, `bootstrap_success_rate`, and sensitivity across a
+grid of `boot_m` values in applied work.
+
 ## Advanced Features
 
 ### Using Different Estimation Methods

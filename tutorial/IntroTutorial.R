@@ -50,6 +50,25 @@
   
   # Visualization
   plot(results)
+
+  # Formal nonsmooth-median uncertainty path (kept disabled here because the
+  # example n_boot is intentionally small for a quick tutorial run).
+  if(FALSE){
+  results_median_subsampling <- lpmec(
+    Y = Yobs,
+    observables = as.data.frame(ObservablesMat),
+    n_boot = 499L,
+    n_partition = 10L,
+    estimation_method = "em",
+    partition_aggregation = "median",
+    bootstrap_method = "subsampling",
+    boot_m_rule = "power",
+    boot_m_exponent = 0.70,
+    boot_ci_type = "root",
+    seed = 123
+  )
+  print(results_median_subsampling$bootstrap_success_rate)
+  }
   
   # Advanced use
   if(TRUE == FALSE){ 

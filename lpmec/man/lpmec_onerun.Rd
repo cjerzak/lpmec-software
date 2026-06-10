@@ -16,7 +16,9 @@ lpmec_onerun(
     1L, n_chains = 2L, outcome_prior = list(calibration = "data"), joint2_prior = list()),
   ordinal = FALSE,
   conda_env = "lpmec",
-  conda_env_required = FALSE
+  conda_env_required = FALSE,
+  partition = NULL,
+  partition_id = NULL
 )
 }
 \arguments{
@@ -92,6 +94,14 @@ via \code{reticulate}. Default is \code{"lpmec"}.}
 \item{conda_env_required}{A logical indicating whether the specified conda environment
 must be strictly used. If \code{TRUE}, an error is thrown if the environment is not found.
 Default is \code{FALSE}.}
+
+\item{partition}{Optional fixed split-half partition. When supplied, must be
+a list with \code{split1_names} and \code{split2_names} entries naming
+observable groups. Default is \code{NULL}, which preserves the historical
+one-off random split behavior.}
+
+\item{partition_id}{Optional identifier for \code{partition}; stored in the
+returned object for bootstrap diagnostics.}
 }
 \value{
 A list containing various estimates and statistics:
