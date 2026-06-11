@@ -21,10 +21,15 @@ lpmec(
   boot_m_exponent = 0.7,
   boot_m_grid = NULL,
   boot_m_replace = NULL,
-  boot_ci_type = c("auto", "root", "percentile"),
+  boot_ci_type = c("auto", "root", "root_calibrated", "percentile"),
   boot_alpha = 0.05,
   boot_rate = c("sqrt_n", "custom"),
   boot_tau = NULL,
+  boot_calibration_n = 25L,
+  boot_calibration_inner_n_boot = NULL,
+  boot_calibration_cut_grid = c(0.005, 0.01, 0.015, 0.02, 0.025, 0.035, 0.05),
+  boot_calibration_tail = c("separate", "equal_tail"),
+  boot_calibration_seed = NULL,
   partition_set = NULL,
   fix_partitions = TRUE,
   seed = NULL,
@@ -95,7 +100,9 @@ m-out-of-n/subsampling. By default, replacement is used for
 \code{"subsampling"}.}
 
 \item{boot_ci_type}{Confidence interval type. \code{"auto"} uses percentile
-intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.}
+intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.
+\code{"root_calibrated"} uses nested subsampling to calibrate the root
+interval tail cutoffs.}
 
 \item{boot_alpha}{Confidence interval tail probability. Default is 0.05.}
 
@@ -103,6 +110,25 @@ intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.}
 uses \code{"sqrt_n"}; \code{"custom"} requires \code{boot_tau}.}
 
 \item{boot_tau}{Optional function used when \code{boot_rate = "custom"}.}
+
+\item{boot_calibration_n}{Positive integer. Number of outer calibration
+subsamples used when \code{boot_ci_type = "root_calibrated"}. Default is
+25.}
+
+\item{boot_calibration_inner_n_boot}{Optional positive integer. Number of
+inner resamples within each calibration subsample. Defaults to
+\code{n_boot}.}
+
+\item{boot_calibration_cut_grid}{Candidate one-sided tail probabilities for
+nested root interval calibration. Values must be greater than \code{0} and
+less than or equal to \code{boot_alpha}. Default is
+\code{c(0.005, 0.010, 0.015, 0.020, 0.025, 0.035, 0.050)}.}
+
+\item{boot_calibration_tail}{Calibration mode. \code{"separate"} calibrates
+lower and upper one-sided root intervals separately; \code{"equal_tail"}
+chooses one common equal-tail cutoff.}
+
+\item{boot_calibration_seed}{Optional seed for the nested calibration stage.}
 
 \item{partition_set}{Optional user-supplied fixed partition list. Each element
 must contain \code{split1_names}, \code{split2_names}, and optionally
@@ -225,12 +251,22 @@ a nonsmooth aggregation rule. The ordinary n-out-of-n row bootstrap remains
 available through \code{bootstrap_method = "n_out_of_n"} for backward
 compatibility. The formal nonsmooth-functional route is
 \code{bootstrap_method = "subsampling"} or \code{"m_out_of_n"} with
-\code{boot_ci_type = "root"}. In that route, the same realized partition set
-is held fixed across the original sample and all resamples, each resample
-reruns the full latent-score and correction pipeline, and confidence
-intervals invert the empirical distribution of
+\code{boot_ci_type = "root"} or \code{"root_calibrated"}. In that route,
+the same realized partition set is held fixed across the original sample
+and all resamples, each resample reruns the full latent-score and correction
+pipeline, and confidence intervals invert the empirical distribution of
 \code{sqrt(m) * (theta_boot - theta_hat)} at the original \code{sqrt(n)}
 rate.
+
+With \code{boot_ci_type = "root_calibrated"}, \code{lpmec()} performs a
+nested subsampling calibration of the root interval cutoffs. For each
+calibration subsample of size \code{m}, it treats the full-sample estimate as
+a pseudo-truth, builds inner root intervals from smaller subsamples, estimates
+candidate one-sided coverage rates, and applies the largest candidate cutoff
+whose estimated coverage reaches the nominal target. This is an asymptotic
+resampling calibration, not a finite-sample coverage guarantee. Its usual
+justification relies on scale separation for the outer and inner subsample
+sizes.
 }
 \examples{
 \donttest{

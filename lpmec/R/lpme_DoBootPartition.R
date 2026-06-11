@@ -41,10 +41,26 @@
 #'   \code{"subsampling"}.
 #' @param boot_ci_type Confidence interval type. \code{"auto"} uses percentile
 #'   intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.
+#'   \code{"root_calibrated"} uses nested subsampling to calibrate the root
+#'   interval tail cutoffs.
 #' @param boot_alpha Confidence interval tail probability. Default is 0.05.
 #' @param boot_rate Rate used by root-scaled intervals. The current formal path
 #'   uses \code{"sqrt_n"}; \code{"custom"} requires \code{boot_tau}.
 #' @param boot_tau Optional function used when \code{boot_rate = "custom"}.
+#' @param boot_calibration_n Positive integer. Number of outer calibration
+#'   subsamples used when \code{boot_ci_type = "root_calibrated"}. Default is
+#'   25.
+#' @param boot_calibration_inner_n_boot Optional positive integer. Number of
+#'   inner resamples within each calibration subsample. Defaults to
+#'   \code{n_boot}.
+#' @param boot_calibration_cut_grid Candidate one-sided tail probabilities for
+#'   nested root interval calibration. Values must be greater than \code{0} and
+#'   less than or equal to \code{boot_alpha}. Default is
+#'   \code{c(0.005, 0.010, 0.015, 0.020, 0.025, 0.035, 0.050)}.
+#' @param boot_calibration_tail Calibration mode. \code{"separate"} calibrates
+#'   lower and upper one-sided root intervals separately; \code{"equal_tail"}
+#'   chooses one common equal-tail cutoff.
+#' @param boot_calibration_seed Optional seed for the nested calibration stage.
 #' @param partition_set Optional user-supplied fixed partition list. Each element
 #'   must contain \code{split1_names}, \code{split2_names}, and optionally
 #'   \code{partition_id}.
@@ -153,12 +169,22 @@
 #' available through \code{bootstrap_method = "n_out_of_n"} for backward
 #' compatibility. The formal nonsmooth-functional route is
 #' \code{bootstrap_method = "subsampling"} or \code{"m_out_of_n"} with
-#' \code{boot_ci_type = "root"}. In that route, the same realized partition set
-#' is held fixed across the original sample and all resamples, each resample
-#' reruns the full latent-score and correction pipeline, and confidence
-#' intervals invert the empirical distribution of
+#' \code{boot_ci_type = "root"} or \code{"root_calibrated"}. In that route,
+#' the same realized partition set is held fixed across the original sample
+#' and all resamples, each resample reruns the full latent-score and correction
+#' pipeline, and confidence intervals invert the empirical distribution of
 #' \code{sqrt(m) * (theta_boot - theta_hat)} at the original \code{sqrt(n)}
 #' rate.
+#'
+#' With \code{boot_ci_type = "root_calibrated"}, \code{lpmec()} performs a
+#' nested subsampling calibration of the root interval cutoffs. For each
+#' calibration subsample of size \code{m}, it treats the full-sample estimate as
+#' a pseudo-truth, builds inner root intervals from smaller subsamples, estimates
+#' candidate one-sided coverage rates, and applies the largest candidate cutoff
+#' whose estimated coverage reaches the nominal target. This is an asymptotic
+#' resampling calibration, not a finite-sample coverage guarantee. Its usual
+#' justification relies on scale separation for the outer and inner subsample
+#' sizes.
 #'
 #' @examples
 #' \donttest{
@@ -208,10 +234,15 @@ lpmec <- function(Y,
                   boot_m_exponent = 0.70,
                   boot_m_grid = NULL,
                   boot_m_replace = NULL,
-                  boot_ci_type = c("auto", "root", "percentile"),
+                  boot_ci_type = c("auto", "root", "root_calibrated", "percentile"),
                   boot_alpha = 0.05,
                   boot_rate = c("sqrt_n", "custom"),
                   boot_tau = NULL,
+                  boot_calibration_n = 25L,
+                  boot_calibration_inner_n_boot = NULL,
+                  boot_calibration_cut_grid = c(0.005, 0.010, 0.015, 0.020, 0.025, 0.035, 0.050),
+                  boot_calibration_tail = c("separate", "equal_tail"),
+                  boot_calibration_seed = NULL,
                   partition_set = NULL,
                   fix_partitions = TRUE,
                   seed = NULL,
@@ -355,6 +386,22 @@ lpmec <- function(Y,
   )
   bootstrap_method <- boot_spec$bootstrap_method
   boot_ci_type <- boot_spec$boot_ci_type
+  boot_calibration_spec <- .lpmec_validate_root_calibration(
+    boot_ci_type = boot_ci_type,
+    bootstrap_method = bootstrap_method,
+    n_boot = n_boot,
+    boot_calibration_n = boot_calibration_n,
+    boot_calibration_inner_n_boot = boot_calibration_inner_n_boot,
+    boot_calibration_cut_grid = boot_calibration_cut_grid,
+    boot_calibration_tail = boot_calibration_tail,
+    boot_calibration_seed = boot_calibration_seed,
+    alpha = boot_alpha
+  )
+  boot_calibration_n <- boot_calibration_spec$n
+  boot_calibration_inner_n_boot <- boot_calibration_spec$inner_n_boot
+  boot_calibration_cut_grid <- boot_calibration_spec$cut_grid
+  boot_calibration_tail <- boot_calibration_spec$tail
+  boot_calibration_seed <- boot_calibration_spec$seed
   if (n_boot >= 1L && n_boot < 199L) {
     warning(
       "n_boot < 199 gives coarse bootstrap confidence intervals; increase n_boot for interval estimation.",
@@ -681,6 +728,274 @@ lpmec <- function(Y,
     lapply(summary_field_names, summarize_field),
     summary_field_names
   )
+
+  boot_calibration_coverage <- NULL
+  boot_calibration_diagnostics <- NULL
+  if (boot_ci_type == "root_calibrated") {
+    if (boot_m_resolved < 3L) {
+      stop("boot_ci_type = \"root_calibrated\" requires resolved boot_m >= 3.")
+    }
+
+    calibration_result <- .lpmec_with_local_seed(boot_calibration_seed, {
+      inner_m_spec <- .lpmec_resolve_m(
+        n = boot_m_resolved,
+        boot_m = NULL,
+        boot_m_rule = "power",
+        boot_m_exponent = boot_m_exponent,
+        boot_m_grid = NULL,
+        min_m = min(10L, boot_m_resolved - 1L),
+        bootstrap_method = bootstrap_method
+      )
+      inner_m <- inner_m_spec$m
+      rate_m_calibration <- .lpmec_rate_value(
+        boot_m_resolved,
+        rate = boot_rate,
+        tau = boot_tau,
+        label = "calibration subsample size"
+      )
+
+      calibration_checks <- vector("list", boot_calibration_n)
+      calibration_errors <- character(0L)
+      full_estimates <- vapply(field_summaries, function(summary) {
+        as.numeric(summary$estimate)[1L]
+      }, numeric(1L))
+
+      for (cal_i in seq_len(boot_calibration_n)) {
+        cal_indices <- .lpmec_resample_indices(
+          n = length(Y),
+          m = boot_m_resolved,
+          replace = boot_replace,
+          boot_basis = if (boot_basis_supplied) boot_basis else NULL
+        )
+
+        inner_fit <- try(
+          suppressMessages(lpmec(
+            Y = Y[cal_indices],
+            observables = observables[cal_indices, , drop = FALSE],
+            observables_groupings = observables_groupings,
+            orientation_signs = NULL,
+            make_observables_groupings = make_observables_groupings,
+            n_boot = boot_calibration_inner_n_boot,
+            n_partition = n_partition_actual,
+            partition_aggregation = partition_aggregation,
+            partition_aggregation_probs = partition_aggregation_probs,
+            bootstrap_method = bootstrap_method,
+            boot_m = inner_m,
+            boot_m_rule = "fixed",
+            boot_m_exponent = boot_m_exponent,
+            boot_m_grid = NULL,
+            boot_m_replace = boot_replace,
+            boot_ci_type = "root",
+            boot_alpha = boot_alpha,
+            boot_rate = boot_rate,
+            boot_tau = boot_tau,
+            partition_set = if (fix_partitions) partition_list else NULL,
+            fix_partitions = fix_partitions,
+            seed = NULL,
+            return_intermediaries = FALSE,
+            ordinal = ordinal,
+            estimation_method = estimation_method,
+            latent_estimation_fn = latent_estimation_fn,
+            mcmc_control = mcmc_control,
+            conda_env = conda_env,
+            conda_env_required = conda_env_required
+          )),
+          silent = TRUE
+        )
+
+        if (inherits(inner_fit, "try-error")) {
+          calibration_errors <- c(
+            calibration_errors,
+            paste0("calibration subsample ", cal_i, ": ", as.character(inner_fit)[1L])
+          )
+          next
+        }
+
+        field_rows <- lapply(summary_field_names, function(field_name) {
+          theta_full <- full_estimates[[field_name]]
+          theta_m <- as.numeric(inner_fit[[field_name]])[1L]
+          root_draws_inner <- inner_fit$root_draws[[field_name]]
+          root_draws_inner <- as.numeric(root_draws_inner[is.finite(root_draws_inner)])
+          if (!is.finite(theta_full) || !is.finite(theta_m) || length(root_draws_inner) < 2L) {
+            return(NULL)
+          }
+
+          do.call(rbind, lapply(boot_calibration_cut_grid, function(cut) {
+            lower <- theta_m -
+              stats::quantile(root_draws_inner, 1 - cut, na.rm = TRUE, names = FALSE) /
+              rate_m_calibration
+            upper <- theta_m -
+              stats::quantile(root_draws_inner, cut, na.rm = TRUE, names = FALSE) /
+              rate_m_calibration
+            lower_covered <- theta_full >= lower
+            upper_covered <- theta_full <= upper
+            data.frame(
+              calibration_index = cal_i,
+              field = field_name,
+              cut = as.numeric(cut),
+              lower_covered = isTRUE(lower_covered),
+              upper_covered = isTRUE(upper_covered),
+              twosided_covered = isTRUE(lower_covered) && isTRUE(upper_covered),
+              stringsAsFactors = FALSE
+            )
+          }))
+        })
+        calibration_checks[[cal_i]] <- do.call(rbind, field_rows)
+      }
+
+      calibration_checks <- do.call(rbind, calibration_checks)
+      if (is.null(calibration_checks) || nrow(calibration_checks) < 1L) {
+        warning(
+          "Root calibration produced no valid calibration intervals; returning uncalibrated root intervals.",
+          call. = FALSE
+        )
+        diagnostics <- data.frame(
+          field = summary_field_names,
+          root_left_tail = boot_alpha / 2,
+          root_right_tail = boot_alpha / 2,
+          selected_lower_coverage = NA_real_,
+          selected_upper_coverage = NA_real_,
+          selected_twosided_coverage = NA_real_,
+          valid_calibration_subsamples = 0L,
+          target_lower_coverage = 1 - boot_alpha / 2,
+          target_upper_coverage = 1 - boot_alpha / 2,
+          target_twosided_coverage = 1 - boot_alpha,
+          calibration_tail = boot_calibration_tail,
+          inner_m = inner_m,
+          calibration_n = boot_calibration_n,
+          inner_n_boot = boot_calibration_inner_n_boot,
+          calibration_status = "no_valid_intervals",
+          stringsAsFactors = FALSE
+        )
+        return(list(
+          field_summaries = field_summaries,
+          coverage = data.frame(),
+          diagnostics = diagnostics,
+          inner_m = inner_m,
+          errors = calibration_errors
+        ))
+      }
+
+      coverage_keys <- unique(calibration_checks[, c("field", "cut"), drop = FALSE])
+      coverage <- do.call(rbind, lapply(seq_len(nrow(coverage_keys)), function(i) {
+        field_name <- coverage_keys$field[[i]]
+        cut <- coverage_keys$cut[[i]]
+        x <- calibration_checks[
+          calibration_checks$field == field_name & calibration_checks$cut == cut,
+          ,
+          drop = FALSE
+        ]
+        data.frame(
+          field = field_name,
+          cut = cut,
+          lower_coverage = mean(x$lower_covered),
+          upper_coverage = mean(x$upper_covered),
+          twosided_coverage = mean(x$twosided_covered),
+          n_calibration = nrow(x),
+          stringsAsFactors = FALSE
+        )
+      }))
+
+      selected <- .lpmec_select_root_calibration_cutoffs(
+        calibration_coverage = coverage,
+        alpha = boot_alpha,
+        tail = boot_calibration_tail
+      )
+
+      updated_summaries <- field_summaries
+      diagnostics <- vector("list", length(summary_field_names))
+      names(diagnostics) <- summary_field_names
+      selected_pair_coverage <- function(field_name, root_left_tail, root_right_tail) {
+        lower_rows <- calibration_checks[
+          calibration_checks$field == field_name &
+            abs(calibration_checks$cut - root_right_tail) < sqrt(.Machine$double.eps),
+          c("calibration_index", "lower_covered"),
+          drop = FALSE
+        ]
+        upper_rows <- calibration_checks[
+          calibration_checks$field == field_name &
+            abs(calibration_checks$cut - root_left_tail) < sqrt(.Machine$double.eps),
+          c("calibration_index", "upper_covered"),
+          drop = FALSE
+        ]
+        names(lower_rows)[names(lower_rows) == "lower_covered"] <- "selected_lower_covered"
+        names(upper_rows)[names(upper_rows) == "upper_covered"] <- "selected_upper_covered"
+        merged <- merge(lower_rows, upper_rows, by = "calibration_index")
+        if (nrow(merged) < 1L) {
+          return(NA_real_)
+        }
+        mean(merged$selected_lower_covered & merged$selected_upper_covered)
+      }
+      for (field_name in summary_field_names) {
+        selected_row <- selected[selected$field == field_name, , drop = FALSE]
+        if (nrow(selected_row) < 1L) {
+          diagnostics[[field_name]] <- data.frame(
+            field = field_name,
+            root_left_tail = boot_alpha / 2,
+            root_right_tail = boot_alpha / 2,
+            selected_lower_coverage = NA_real_,
+            selected_upper_coverage = NA_real_,
+            selected_twosided_coverage = NA_real_,
+            valid_calibration_subsamples = 0L,
+            calibration_status = "not_calibrated",
+            stringsAsFactors = FALSE
+          )
+          next
+        }
+
+        updated_summaries[[field_name]] <- .lpmec_apply_root_tail_cutoffs(
+          summary = updated_summaries[[field_name]],
+          n = length(Y),
+          rate = boot_rate,
+          tau = boot_tau,
+          root_left_tail = selected_row$root_left_tail[[1L]],
+          root_right_tail = selected_row$root_right_tail[[1L]]
+        )
+        field_coverage <- coverage[coverage$field == field_name, , drop = FALSE]
+        diagnostics[[field_name]] <- data.frame(
+          field = field_name,
+          root_left_tail = selected_row$root_left_tail[[1L]],
+          root_right_tail = selected_row$root_right_tail[[1L]],
+          selected_lower_coverage = selected_row$selected_lower_coverage[[1L]],
+          selected_upper_coverage = selected_row$selected_upper_coverage[[1L]],
+          selected_twosided_coverage = selected_pair_coverage(
+            field_name,
+            selected_row$root_left_tail[[1L]],
+            selected_row$root_right_tail[[1L]]
+          ),
+          valid_calibration_subsamples = max(field_coverage$n_calibration, na.rm = TRUE),
+          calibration_status = "calibrated",
+          stringsAsFactors = FALSE
+        )
+      }
+      diagnostics <- do.call(rbind, diagnostics)
+      diagnostics$target_lower_coverage <- 1 - boot_alpha / 2
+      diagnostics$target_upper_coverage <- 1 - boot_alpha / 2
+      diagnostics$target_twosided_coverage <- 1 - boot_alpha
+      diagnostics$calibration_tail <- boot_calibration_tail
+      diagnostics$inner_m <- inner_m
+      diagnostics$calibration_n <- boot_calibration_n
+      diagnostics$inner_n_boot <- boot_calibration_inner_n_boot
+      diagnostics$calibration_errors <- if (length(calibration_errors) > 0L) {
+        paste(calibration_errors, collapse = "\n")
+      } else {
+        NA_character_
+      }
+
+      list(
+        field_summaries = updated_summaries,
+        coverage = coverage,
+        diagnostics = diagnostics,
+        inner_m = inner_m,
+        errors = calibration_errors
+      )
+    })
+
+    field_summaries <- calibration_result$field_summaries
+    boot_calibration_coverage <- calibration_result$coverage
+    boot_calibration_diagnostics <- calibration_result$diagnostics
+  }
+
   bootstrap_aggregates <- data.frame(
     BootIndex = boot_levels,
     BootSampleSize = ifelse(boot_levels == 1L, length(Y), boot_m_resolved),
@@ -815,6 +1130,25 @@ lpmec <- function(Y,
       "boot_replace" = boot_replace,
       "boot_ci_type" = boot_ci_type,
       "boot_rate" = boot_rate,
+      "boot_calibration" = if (boot_ci_type == "root_calibrated") {
+        "nested_subsampling"
+      } else {
+        "none"
+      },
+      "boot_calibration_tail" = boot_calibration_tail,
+      "boot_calibration_n" = if (boot_ci_type == "root_calibrated") boot_calibration_n else NA_integer_,
+      "boot_calibration_inner_n_boot" = if (boot_ci_type == "root_calibrated") {
+        boot_calibration_inner_n_boot
+      } else {
+        NA_integer_
+      },
+      "boot_calibration_cut_grid" = if (boot_ci_type == "root_calibrated") {
+        boot_calibration_cut_grid
+      } else {
+        numeric(0L)
+      },
+      "boot_calibration_coverage" = boot_calibration_coverage,
+      "boot_calibration_diagnostics" = boot_calibration_diagnostics,
       "partition_set" = if (fix_partitions) partition_list else NULL,
       "fix_partitions" = fix_partitions,
       "n_unique_partitions" = n_partition_actual,

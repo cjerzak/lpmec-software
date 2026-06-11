@@ -200,7 +200,7 @@
     bootstrap_method,
     c("n_out_of_n", "m_out_of_n", "subsampling", "auto")
   )
-  boot_ci_type <- match.arg(boot_ci_type, c("auto", "root", "percentile"))
+  boot_ci_type <- match.arg(boot_ci_type, c("auto", "root", "root_calibrated", "percentile"))
 
   median_aggregation <- is.character(partition_aggregation) &&
     length(partition_aggregation) == 1L &&
@@ -219,7 +219,8 @@
       "partition_aggregation = \"median\" is nonsmooth. The ordinary n-out-of-n ",
       "bootstrap is retained for backward compatibility and practical approximation. ",
       "For the formal nonsmooth-functional route, use bootstrap_method = ",
-      "\"subsampling\" or \"m_out_of_n\" with boot_ci_type = \"root\".",
+      "\"subsampling\" or \"m_out_of_n\" with boot_ci_type = \"root\" ",
+      "or \"root_calibrated\".",
       call. = FALSE
     )
   }
@@ -227,7 +228,8 @@
   if (bootstrap_method != "n_out_of_n" && boot_ci_type == "percentile") {
     warning(
       "Raw percentile intervals for m < n resampling are not root-scaled. ",
-      "For the formal nonsmooth-functional route, use boot_ci_type = \"root\".",
+      "For the formal nonsmooth-functional route, use boot_ci_type = \"root\" ",
+      "or \"root_calibrated\".",
       call. = FALSE
     )
   }
@@ -452,6 +454,199 @@
   out
 }
 
+.lpmec_rate_value <- function(k,
+                              rate = "sqrt_n",
+                              tau = NULL,
+                              label = "k") {
+  if (!is.numeric(k) || length(k) != 1L || !is.finite(k) || k <= 0) {
+    stop("'", label, "' must be a single positive finite numeric value.")
+  }
+  rate <- match.arg(rate, c("sqrt_n", "custom"))
+  if (rate == "sqrt_n") {
+    return(sqrt(k))
+  }
+  if (!is.function(tau)) {
+    stop("'tau' must be a function when boot_rate = \"custom\".")
+  }
+  out <- tau(k)
+  if (!is.numeric(out) || length(out) != 1L || !is.finite(out) || out <= 0) {
+    stop("'tau' must return a single positive finite numeric value for ", label, ".")
+  }
+  as.numeric(out)
+}
+
+.lpmec_validate_root_calibration <- function(boot_ci_type,
+                                             bootstrap_method,
+                                             n_boot,
+                                             boot_calibration_n,
+                                             boot_calibration_inner_n_boot,
+                                             boot_calibration_cut_grid,
+                                             boot_calibration_tail,
+                                             boot_calibration_seed,
+                                             alpha) {
+  boot_calibration_tail <- match.arg(boot_calibration_tail, c("separate", "equal_tail"))
+  if (boot_ci_type != "root_calibrated") {
+    return(list(
+      n = as.integer(boot_calibration_n),
+      inner_n_boot = boot_calibration_inner_n_boot,
+      cut_grid = sort(unique(as.numeric(boot_calibration_cut_grid))),
+      tail = boot_calibration_tail,
+      seed = boot_calibration_seed
+    ))
+  }
+
+  if (!bootstrap_method %in% c("m_out_of_n", "subsampling")) {
+    stop("boot_ci_type = \"root_calibrated\" requires bootstrap_method = \"subsampling\" or \"m_out_of_n\".")
+  }
+  if (!is.numeric(n_boot) ||
+      length(n_boot) != 1L ||
+      !is.finite(n_boot) ||
+      n_boot != floor(n_boot) ||
+      n_boot < 2L) {
+    stop("boot_ci_type = \"root_calibrated\" requires n_boot >= 2.")
+  }
+  if (!is.numeric(boot_calibration_n) ||
+      length(boot_calibration_n) != 1L ||
+      !is.finite(boot_calibration_n) ||
+      boot_calibration_n != floor(boot_calibration_n) ||
+      boot_calibration_n < 1L) {
+    stop("'boot_calibration_n' must be a single positive integer.")
+  }
+  if (is.null(boot_calibration_inner_n_boot)) {
+    boot_calibration_inner_n_boot <- n_boot
+  }
+  if (!is.numeric(boot_calibration_inner_n_boot) ||
+      length(boot_calibration_inner_n_boot) != 1L ||
+      !is.finite(boot_calibration_inner_n_boot) ||
+      boot_calibration_inner_n_boot != floor(boot_calibration_inner_n_boot) ||
+      boot_calibration_inner_n_boot < 2L) {
+    stop("'boot_calibration_inner_n_boot' must be NULL or a single integer greater than or equal to 2.")
+  }
+  if (!is.numeric(boot_calibration_cut_grid) ||
+      length(boot_calibration_cut_grid) < 1L ||
+      any(!is.finite(boot_calibration_cut_grid)) ||
+      any(boot_calibration_cut_grid <= 0) ||
+      any(boot_calibration_cut_grid > alpha)) {
+    stop("'boot_calibration_cut_grid' must contain finite values greater than 0 and less than or equal to boot_alpha.")
+  }
+  if (!is.null(boot_calibration_seed) &&
+      (!is.numeric(boot_calibration_seed) ||
+       length(boot_calibration_seed) != 1L ||
+       !is.finite(boot_calibration_seed))) {
+    stop("'boot_calibration_seed' must be NULL or a single finite numeric value.")
+  }
+
+  list(
+    n = as.integer(boot_calibration_n),
+    inner_n_boot = as.integer(boot_calibration_inner_n_boot),
+    cut_grid = sort(unique(as.numeric(boot_calibration_cut_grid))),
+    tail = boot_calibration_tail,
+    seed = boot_calibration_seed
+  )
+}
+
+.lpmec_select_root_calibration_cutoffs <- function(calibration_coverage,
+                                                   alpha = 0.05,
+                                                   tail = c("separate", "equal_tail")) {
+  tail <- match.arg(tail)
+  required <- c("field", "cut", "lower_coverage", "upper_coverage", "twosided_coverage")
+  if (!all(required %in% names(calibration_coverage))) {
+    stop("'calibration_coverage' must contain columns: ", paste(required, collapse = ", "), ".")
+  }
+  if (!is.numeric(alpha) ||
+      length(alpha) != 1L ||
+      !is.finite(alpha) ||
+      alpha <= 0 ||
+      alpha >= 1) {
+    stop("'alpha' must be a single value in (0, 1).")
+  }
+
+  fields <- unique(as.character(calibration_coverage$field))
+  out <- lapply(fields, function(field_name) {
+    x <- calibration_coverage[as.character(calibration_coverage$field) == field_name, , drop = FALSE]
+    x <- x[order(x$cut), , drop = FALSE]
+    valid_cuts <- x$cut[is.finite(x$cut)]
+    if (length(valid_cuts) < 1L) {
+      return(data.frame(
+        field = field_name,
+        root_left_tail = NA_real_,
+        root_right_tail = NA_real_,
+        selected_lower_coverage = NA_real_,
+        selected_upper_coverage = NA_real_,
+        selected_twosided_coverage = NA_real_,
+        stringsAsFactors = FALSE
+      ))
+    }
+
+    choose_largest <- function(coverage, target) {
+      ok <- which(is.finite(coverage) & coverage >= target)
+      if (length(ok) < 1L) {
+        return(min(valid_cuts))
+      }
+      max(x$cut[ok], na.rm = TRUE)
+    }
+
+    if (tail == "equal_tail") {
+      chosen <- choose_largest(x$twosided_coverage, 1 - alpha)
+      left_tail <- chosen
+      right_tail <- chosen
+    } else {
+      left_tail <- choose_largest(x$upper_coverage, 1 - alpha / 2)
+      right_tail <- choose_largest(x$lower_coverage, 1 - alpha / 2)
+    }
+
+    selected_row <- function(cut) {
+      which.min(abs(x$cut - cut))
+    }
+    left_row <- selected_row(left_tail)
+    right_row <- selected_row(right_tail)
+    two_row <- selected_row(if (tail == "equal_tail") left_tail else min(left_tail, right_tail))
+    data.frame(
+      field = field_name,
+      root_left_tail = as.numeric(left_tail),
+      root_right_tail = as.numeric(right_tail),
+      selected_lower_coverage = as.numeric(x$lower_coverage[right_row]),
+      selected_upper_coverage = as.numeric(x$upper_coverage[left_row]),
+      selected_twosided_coverage = as.numeric(x$twosided_coverage[two_row]),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, out)
+}
+
+.lpmec_apply_root_tail_cutoffs <- function(summary,
+                                           n,
+                                           rate = "sqrt_n",
+                                           tau = NULL,
+                                           root_left_tail,
+                                           root_right_tail) {
+  if (is.null(summary$root_draws) || length(summary$root_draws) < 2L ||
+      !is.finite(summary$estimate) ||
+      !is.finite(root_left_tail) ||
+      !is.finite(root_right_tail)) {
+    summary$root_left_tail <- root_left_tail
+    summary$root_right_tail <- root_right_tail
+    return(summary)
+  }
+  if (root_left_tail <= 0 || root_left_tail >= 1 ||
+      root_right_tail <= 0 || root_right_tail >= 1) {
+    stop("'root_left_tail' and 'root_right_tail' must be in (0, 1).")
+  }
+  rate_n <- .lpmec_rate_value(n, rate = rate, tau = tau, label = "n")
+  root_draws <- as.numeric(summary$root_draws)
+  summary$lower <- as.numeric(
+    summary$estimate -
+      stats::quantile(root_draws, 1 - root_right_tail, na.rm = TRUE, names = FALSE) / rate_n
+  )
+  summary$upper <- as.numeric(
+    summary$estimate -
+      stats::quantile(root_draws, root_left_tail, na.rm = TRUE, names = FALSE) / rate_n
+  )
+  summary$root_left_tail <- as.numeric(root_left_tail)
+  summary$root_right_tail <- as.numeric(root_right_tail)
+  summary
+}
+
 .lpmec_summarize_resampling <- function(theta0,
                                         theta_boot,
                                         n,
@@ -460,9 +655,11 @@
                                         boot_ci_type,
                                         alpha = 0.05,
                                         rate = "sqrt_n",
-                                        tau = NULL) {
+                                        tau = NULL,
+                                        root_left_tail = NULL,
+                                        root_right_tail = NULL) {
   bootstrap_method <- match.arg(bootstrap_method, c("n_out_of_n", "m_out_of_n", "subsampling"))
-  boot_ci_type <- match.arg(boot_ci_type, c("root", "percentile"))
+  boot_ci_type <- match.arg(boot_ci_type, c("root", "root_calibrated", "percentile"))
   rate <- match.arg(rate, c("sqrt_n", "custom"))
   if (!is.numeric(alpha) ||
       length(alpha) != 1L ||
@@ -470,6 +667,26 @@
       alpha <= 0 ||
       alpha >= 1) {
     stop("'alpha' must be a single value in (0, 1).")
+  }
+  if (is.null(root_left_tail)) {
+    root_left_tail <- alpha / 2
+  }
+  if (is.null(root_right_tail)) {
+    root_right_tail <- alpha / 2
+  }
+  if (!is.numeric(root_left_tail) ||
+      length(root_left_tail) != 1L ||
+      !is.finite(root_left_tail) ||
+      root_left_tail <= 0 ||
+      root_left_tail >= 1) {
+    stop("'root_left_tail' must be NULL or a single value in (0, 1).")
+  }
+  if (!is.numeric(root_right_tail) ||
+      length(root_right_tail) != 1L ||
+      !is.finite(root_right_tail) ||
+      root_right_tail <= 0 ||
+      root_right_tail >= 1) {
+    stop("'root_right_tail' must be NULL or a single value in (0, 1).")
   }
 
   theta0 <- as.numeric(theta0)[1L]
@@ -490,26 +707,16 @@
     root_draws = numeric(0L),
     n_draws = n_draws,
     n_failed = n_failed,
-    success_rate = if ((n_draws + n_failed) > 0L) n_draws / (n_draws + n_failed) else NA_real_
+    success_rate = if ((n_draws + n_failed) > 0L) n_draws / (n_draws + n_failed) else NA_real_,
+    root_left_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
+    root_right_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
   )
   if (!is.finite(theta0) || n_draws < 2L) {
     return(empty)
   }
 
-  if (rate == "sqrt_n") {
-    rate_m <- sqrt(m)
-    rate_n <- sqrt(n)
-  } else {
-    if (!is.function(tau)) {
-      stop("'tau' must be a function when boot_rate = \"custom\".")
-    }
-    rate_m <- tau(m)
-    rate_n <- tau(n)
-    if (!is.numeric(rate_m) || length(rate_m) != 1L || !is.finite(rate_m) ||
-        !is.numeric(rate_n) || length(rate_n) != 1L || !is.finite(rate_n)) {
-      stop("'tau' must return a single finite numeric value for m and n.")
-    }
-  }
+  rate_m <- .lpmec_rate_value(m, rate = rate, tau = tau, label = "m")
+  rate_n <- .lpmec_rate_value(n, rate = rate, tau = tau, label = "n")
 
   if (boot_ci_type == "percentile") {
     se <- stats::sd(theta_boot)
@@ -519,8 +726,8 @@
   } else {
     root_draws <- rate_m * (theta_boot - theta0)
     se <- stats::sd(root_draws, na.rm = TRUE) / rate_n
-    lower <- theta0 - stats::quantile(root_draws, 1 - alpha / 2, na.rm = TRUE, names = FALSE) / rate_n
-    upper <- theta0 - stats::quantile(root_draws, alpha / 2, na.rm = TRUE, names = FALSE) / rate_n
+    lower <- theta0 - stats::quantile(root_draws, 1 - root_right_tail, na.rm = TRUE, names = FALSE) / rate_n
+    upper <- theta0 - stats::quantile(root_draws, root_left_tail, na.rm = TRUE, names = FALSE) / rate_n
   }
 
   list(
@@ -531,7 +738,9 @@
     root_draws = as.numeric(root_draws),
     n_draws = n_draws,
     n_failed = n_failed,
-    success_rate = n_draws / (n_draws + n_failed)
+    success_rate = n_draws / (n_draws + n_failed),
+    root_left_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
+    root_right_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
   )
 }
 

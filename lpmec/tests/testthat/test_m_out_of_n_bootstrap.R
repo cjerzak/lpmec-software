@@ -130,6 +130,107 @@ test_that("root interval helper implements m-to-n scaling exactly", {
   expect_equal(summary$n_failed, 2L)
 })
 
+test_that("root interval helper accepts asymmetric calibrated tails", {
+  theta0 <- 10
+  theta_boot <- c(8, 9, 11, 12, 13)
+  n <- 100
+  m <- 25
+  root_draws <- sqrt(m) * (theta_boot - theta0)
+
+  summary <- lpmec:::.lpmec_summarize_resampling(
+    theta0 = theta0,
+    theta_boot = theta_boot,
+    n = n,
+    m = m,
+    bootstrap_method = "subsampling",
+    boot_ci_type = "root_calibrated",
+    alpha = 0.20,
+    root_left_tail = 0.05,
+    root_right_tail = 0.15
+  )
+
+  expect_equal(summary$root_left_tail, 0.05)
+  expect_equal(summary$root_right_tail, 0.15)
+  expect_equal(
+    summary$lower,
+    theta0 - stats::quantile(root_draws, 1 - 0.15, names = FALSE) / sqrt(n)
+  )
+  expect_equal(
+    summary$upper,
+    theta0 - stats::quantile(root_draws, 0.05, names = FALSE) / sqrt(n)
+  )
+})
+
+test_that("root calibration cutoff selector chooses largest admissible cutoffs", {
+  coverage <- data.frame(
+    field = "theta",
+    cut = c(0.010, 0.025, 0.050),
+    lower_coverage = c(1.000, 0.980, 0.940),
+    upper_coverage = c(0.990, 0.960, 0.940),
+    twosided_coverage = c(0.980, 0.950, 0.900)
+  )
+
+  separate <- lpmec:::.lpmec_select_root_calibration_cutoffs(
+    coverage,
+    alpha = 0.05,
+    tail = "separate"
+  )
+  expect_equal(separate$root_right_tail, 0.025)
+  expect_equal(separate$root_left_tail, 0.010)
+
+  equal_tail <- lpmec:::.lpmec_select_root_calibration_cutoffs(
+    coverage,
+    alpha = 0.05,
+    tail = "equal_tail"
+  )
+  expect_equal(equal_tail$root_right_tail, 0.025)
+  expect_equal(equal_tail$root_left_tail, 0.025)
+})
+
+test_that("root calibration validates method and grid inputs", {
+  expect_error(
+    lpmec:::.lpmec_validate_root_calibration(
+      boot_ci_type = "root_calibrated",
+      bootstrap_method = "n_out_of_n",
+      n_boot = 10L,
+      boot_calibration_n = 2L,
+      boot_calibration_inner_n_boot = 2L,
+      boot_calibration_cut_grid = c(0.025, 0.050),
+      boot_calibration_tail = "separate",
+      boot_calibration_seed = NULL,
+      alpha = 0.05
+    ),
+    "requires bootstrap_method"
+  )
+
+  expect_error(
+    lpmec:::.lpmec_validate_root_calibration(
+      boot_ci_type = "root_calibrated",
+      bootstrap_method = "subsampling",
+      n_boot = 10L,
+      boot_calibration_n = 2L,
+      boot_calibration_inner_n_boot = 2L,
+      boot_calibration_cut_grid = c(0, 0.025),
+      boot_calibration_tail = "separate",
+      boot_calibration_seed = NULL,
+      alpha = 0.05
+    ),
+    "boot_calibration_cut_grid"
+  )
+
+  expect_silent(lpmec:::.lpmec_validate_root_calibration(
+    boot_ci_type = "root_calibrated",
+    bootstrap_method = "subsampling",
+    n_boot = 10L,
+    boot_calibration_n = 2L,
+    boot_calibration_inner_n_boot = 2L,
+    boot_calibration_cut_grid = c(0.025, 0.050),
+    boot_calibration_tail = "separate",
+    boot_calibration_seed = NULL,
+    alpha = 0.05
+  ))
+})
+
 test_that("lpmec keeps supplied partitions fixed across bootstrap replicates", {
   set.seed(11)
   n <- 90
@@ -168,4 +269,46 @@ test_that("lpmec keeps supplied partitions fixed across bootstrap replicates", {
   expect_true(is.finite(fit$corrected_iv_se))
   expect_true("corrected_iv_coef" %in% names(fit$root_draws))
   expect_equal(nrow(fit$bootstrap_aggregates), 4L)
+})
+
+test_that("lpmec runs nested calibrated root intervals on a small averaging fit", {
+  set.seed(12)
+  n <- 90
+  x <- rnorm(n)
+  Y <- 0.6 * x + rnorm(n, sd = 0.4)
+  obs <- as.data.frame(sapply(seq_len(6), function(j) {
+    stats::rbinom(n, 1, stats::plogis(1.2 * x + rnorm(n, sd = 0.2)))
+  }))
+  partition_set <- list(
+    list(partition_id = "p1", split1_names = c("V1", "V2", "V3"), split2_names = c("V4", "V5", "V6")),
+    list(partition_id = "p2", split1_names = c("V1", "V4", "V5"), split2_names = c("V2", "V3", "V6"))
+  )
+
+  fit <- suppressWarnings(suppressMessages(lpmec(
+    Y = Y,
+    observables = obs,
+    n_boot = 2L,
+    n_partition = 2L,
+    estimation_method = "averaging",
+    partition_aggregation = "median",
+    bootstrap_method = "subsampling",
+    boot_m = 40L,
+    boot_ci_type = "root_calibrated",
+    boot_calibration_n = 1L,
+    boot_calibration_inner_n_boot = 2L,
+    boot_calibration_cut_grid = c(0.025, 0.050),
+    boot_calibration_seed = 101,
+    partition_set = partition_set,
+    seed = 99,
+    return_intermediaries = FALSE
+  )))
+
+  expect_s3_class(fit, "lpmec")
+  expect_equal(fit$boot_ci_type, "root_calibrated")
+  expect_equal(fit$boot_calibration, "nested_subsampling")
+  expect_equal(fit$boot_calibration_tail, "separate")
+  expect_true(is.data.frame(fit$boot_calibration_coverage))
+  expect_true(is.data.frame(fit$boot_calibration_diagnostics))
+  expect_true("corrected_iv_coef" %in% fit$boot_calibration_diagnostics$field)
+  expect_true("corrected_iv_coef" %in% names(fit$root_draws))
 })
