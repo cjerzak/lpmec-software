@@ -27,6 +27,18 @@ test_that("m resolution handles n-out-of-n, power m, and explicit invalid m", {
   )
 })
 
+test_that("median aggregation resolves n-out-of-n bootstrap without advisory warning", {
+  expect_silent({
+    boot_spec <- lpmec:::.lpmec_resolve_bootstrap_method(
+      bootstrap_method = "n_out_of_n",
+      partition_aggregation = "median",
+      boot_ci_type = "auto"
+    )
+  })
+  expect_equal(boot_spec$bootstrap_method, "n_out_of_n")
+  expect_equal(boot_spec$boot_ci_type, "percentile")
+})
+
 test_that("resampling indices have requested length and respect replacement", {
   set.seed(1)
   idx <- lpmec:::.lpmec_resample_indices(30, 12, replace = FALSE)

@@ -381,8 +381,7 @@ lpmec <- function(Y,
   boot_spec <- .lpmec_resolve_bootstrap_method(
     bootstrap_method,
     partition_aggregation,
-    boot_ci_type,
-    warn_nonsmooth = n_boot >= 1L
+    boot_ci_type
   )
   bootstrap_method <- boot_spec$bootstrap_method
   boot_ci_type <- boot_spec$boot_ci_type

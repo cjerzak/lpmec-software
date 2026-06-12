@@ -194,8 +194,7 @@
 
 .lpmec_resolve_bootstrap_method <- function(bootstrap_method,
                                             partition_aggregation,
-                                            boot_ci_type,
-                                            warn_nonsmooth = TRUE) {
+                                            boot_ci_type) {
   bootstrap_method <- match.arg(
     bootstrap_method,
     c("n_out_of_n", "m_out_of_n", "subsampling", "auto")
@@ -212,17 +211,6 @@
 
   if (boot_ci_type == "auto") {
     boot_ci_type <- if (bootstrap_method == "n_out_of_n") "percentile" else "root"
-  }
-
-  if (isTRUE(warn_nonsmooth) && median_aggregation && bootstrap_method == "n_out_of_n") {
-    warning(
-      "partition_aggregation = \"median\" is nonsmooth. The ordinary n-out-of-n ",
-      "bootstrap is retained for backward compatibility and practical approximation. ",
-      "For the formal nonsmooth-functional route, use bootstrap_method = ",
-      "\"subsampling\" or \"m_out_of_n\" with boot_ci_type = \"root\" ",
-      "or \"root_calibrated\".",
-      call. = FALSE
-    )
   }
 
   if (bootstrap_method != "n_out_of_n" && boot_ci_type == "percentile") {

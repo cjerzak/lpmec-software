@@ -64,6 +64,32 @@ test_that("lpmec partition aggregation works with n_partition > 1", {
   expect_true(is.numeric(res$ols_coef))
 })
 
+test_that("lpmec allows median aggregation with n-out-of-n bootstrap without advisory warning", {
+  set.seed(123)
+  Y <- rnorm(80)
+  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+
+  warnings <- character(0L)
+  res <- withCallingHandlers(
+    suppressMessages(lpmec(
+      Y,
+      obs,
+      n_boot = 1,
+      n_partition = 3,
+      estimation_method = "pca",
+      partition_aggregation = "median",
+      bootstrap_method = "n_out_of_n"
+    )),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_s3_class(res, "lpmec")
+  expect_false(any(grepl("nonsmooth|ordinary n-out-of-n", warnings)))
+})
+
 test_that("lpmec supports n_boot = 0 with one original-sample partition", {
   set.seed(123)
   Y <- rnorm(80)
