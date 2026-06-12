@@ -142,6 +142,51 @@ test_that("root interval helper implements m-to-n scaling exactly", {
   expect_equal(summary$n_failed, 2L)
 })
 
+test_that("RBC controls resolve item-count grids and validate inputs", {
+  boot_spec <- lpmec:::.lpmec_resolve_bootstrap_method(
+    bootstrap_method = "subsampling",
+    partition_aggregation = "median",
+    boot_ci_type = "rbc"
+  )
+  expect_equal(boot_spec$bootstrap_method, "subsampling")
+  expect_equal(boot_spec$boot_ci_type, "rbc")
+
+  controls <- lpmec:::.lpmec_resolve_rbc_controls(
+    boot_ci_type = "rbc",
+    observables_groupings = paste0("g", seq_len(8)),
+    boot_rbc_item_counts = NULL,
+    boot_rbc_n_subsets = 2L,
+    boot_rbc_seed = 10
+  )
+  expect_true(controls$enabled)
+  expect_equal(controls$full_count, 8L)
+  expect_equal(controls$item_counts, c(4L, 6L, 7L))
+  expect_equal(controls$n_subsets, 2L)
+
+  expect_error(
+    lpmec:::.lpmec_resolve_rbc_controls(
+      boot_ci_type = "rbc",
+      observables_groupings = paste0("g", seq_len(8)),
+      boot_rbc_item_counts = c(3L, 6L)
+    ),
+    "between 4 and M - 1"
+  )
+})
+
+test_that("inverse-M RBC helper removes known leading bias", {
+  fit <- lpmec:::.lpmec_fit_inverse_m_bias(
+    item_counts = c(5L, 10L),
+    theta_by_count = 2 + 4 / c(5, 10),
+    full_count = 20L,
+    theta_full = 2 + 4 / 20
+  )
+
+  expect_equal(fit$status, "rbc")
+  expect_equal(fit$bias_hat, 4 / 20)
+  expect_equal(fit$theta_rbc, 2)
+  expect_equal(fit$n_pilot_counts, 2L)
+})
+
 test_that("root interval helper accepts asymmetric calibrated tails", {
   theta0 <- 10
   theta_boot <- c(8, 9, 11, 12, 13)
@@ -323,4 +368,50 @@ test_that("lpmec runs nested calibrated root intervals on a small averaging fit"
   expect_true(is.data.frame(fit$boot_calibration_diagnostics))
   expect_true("corrected_iv_coef" %in% fit$boot_calibration_diagnostics$field)
   expect_true("corrected_iv_coef" %in% names(fit$root_draws))
+})
+
+test_that("lpmec runs RBC root intervals on a small averaging fit", {
+  set.seed(13)
+  n <- 90
+  x <- rnorm(n)
+  Y <- 0.6 * x + rnorm(n, sd = 0.4)
+  obs <- as.data.frame(sapply(seq_len(8), function(j) {
+    stats::rbinom(n, 1, stats::plogis(1.2 * x + rnorm(n, sd = 0.2)))
+  }))
+
+  fit <- suppressWarnings(suppressMessages(lpmec(
+    Y = Y,
+    observables = obs,
+    n_boot = 2L,
+    n_partition = 2L,
+    estimation_method = "averaging",
+    partition_aggregation = "median",
+    bootstrap_method = "subsampling",
+    boot_m = 40L,
+    boot_ci_type = "rbc",
+    boot_rbc_item_counts = c(4L, 6L),
+    boot_rbc_n_subsets = 1L,
+    boot_rbc_seed = 100,
+    seed = 99,
+    return_intermediaries = FALSE
+  )))
+
+  expect_s3_class(fit, "lpmec")
+  expect_equal(fit$boot_ci_type, "rbc")
+  expect_equal(fit$boot_rbc_item_counts, c(4L, 6L))
+  expect_equal(fit$boot_rbc_n_subsets, 1L)
+  expect_true(is.data.frame(fit$boot_rbc_diagnostics))
+  expect_true(is.data.frame(fit$boot_rbc_raw_aggregates))
+  expect_true(is.data.frame(fit$boot_rbc_pilot_aggregates))
+  expect_equal(nrow(fit$bootstrap_aggregates), 3L)
+  expect_equal(nrow(fit$boot_rbc_raw_aggregates), 3L)
+  expect_true("corrected_ols_coef" %in% fit$boot_rbc_diagnostics$field)
+  expect_equal(
+    fit$boot_rbc_diagnostics$status[
+      fit$boot_rbc_diagnostics$field == "corrected_ols_coef"
+    ],
+    "rbc"
+  )
+  expect_true("corrected_ols_coef" %in% names(fit$root_draws))
+  expect_true(is.finite(fit$corrected_ols_coef))
 })

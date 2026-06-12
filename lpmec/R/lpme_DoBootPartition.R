@@ -42,7 +42,8 @@
 #' @param boot_ci_type Confidence interval type. \code{"auto"} uses percentile
 #'   intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.
 #'   \code{"root_calibrated"} uses nested subsampling to calibrate the root
-#'   interval tail cutoffs.
+#'   interval tail cutoffs. \code{"rbc"} uses finite-item-count robust bias
+#'   correction with root-scaled intervals.
 #' @param boot_alpha Confidence interval tail probability. Default is 0.05.
 #' @param boot_rate Rate used by root-scaled intervals. The current formal path
 #'   uses \code{"sqrt_n"}; \code{"custom"} requires \code{boot_tau}.
@@ -61,6 +62,15 @@
 #'   lower and upper one-sided root intervals separately; \code{"equal_tail"}
 #'   chooses one common equal-tail cutoff.
 #' @param boot_calibration_seed Optional seed for the nested calibration stage.
+#' @param boot_rbc_item_counts Optional integer vector of observable-group
+#'   counts used to estimate the leading finite-M bias when
+#'   \code{boot_ci_type = "rbc"}. Defaults to a fixed grid based on fractions
+#'   of the full number of observable groups.
+#' @param boot_rbc_n_subsets Positive integer. Number of item subsets drawn at
+#'   each value of \code{boot_rbc_item_counts}. Used only when
+#'   \code{boot_ci_type = "rbc"}. Default is 10.
+#' @param boot_rbc_seed Optional seed for the item-subset schedule used by
+#'   \code{boot_ci_type = "rbc"}.
 #' @param partition_set Optional user-supplied fixed partition list. Each element
 #'   must contain \code{split1_names}, \code{split2_names}, and optionally
 #'   \code{partition_id}.
@@ -151,6 +161,9 @@
 #'     transitions, mean accept probability, and orientation diagnostics.
 #'   \item \code{x_est1} and \code{x_est2}: Split-half latent variable
 #'     estimates from the original sample.
+#'   \item \code{boot_rbc_diagnostics}, \code{boot_rbc_raw_aggregates}, and
+#'     \code{boot_rbc_pilot_aggregates}: Robust-bias-correction diagnostics
+#'     returned when \code{boot_ci_type = "rbc"}.
 #'   \item \code{Intermediary_*}: Per-run original-sample and bootstrap
 #'     outputs, returned only when \code{return_intermediaries = TRUE}.
 #' }
@@ -186,6 +199,13 @@
 #' justification relies on scale separation for the outer and inner subsample
 #' sizes.
 #'
+#' With \code{boot_ci_type = "rbc"}, \code{lpmec()} estimates a leading
+#' finite-item-count bias by rerunning the estimator on a fixed, pre-specified
+#' grid of observable-group subsets and fitting each target summary to
+#' \code{a + b / M}. It subtracts \code{b / M} from the full-M estimate and
+#' constructs root intervals from bootstrap draws of the same bias-corrected
+#' statistic.
+#'
 #' @examples
 #' \donttest{
 #' # Generate some example data
@@ -215,6 +235,10 @@
 #' Jerzak, C. T. and Jessee, S. A. (2025). Attenuation Bias with Latent Predictors.
 #' arXiv:2507.22218 [stat.AP]. \url{https://arxiv.org/abs/2507.22218}
 #'
+#' Calonico, S., Cattaneo, M. D., and Farrell, M. H. (2018). On the Effect of
+#' Bias Estimation on Coverage Accuracy in Nonparametric Inference. Journal of
+#' the American Statistical Association, 113, 767--779.
+#'
 #' @export
 #' @importFrom stats sd median na.omit
 
@@ -234,7 +258,7 @@ lpmec <- function(Y,
                   boot_m_exponent = 0.70,
                   boot_m_grid = NULL,
                   boot_m_replace = NULL,
-                  boot_ci_type = c("auto", "root", "root_calibrated", "percentile"),
+                  boot_ci_type = c("auto", "root", "root_calibrated", "percentile", "rbc"),
                   boot_alpha = 0.05,
                   boot_rate = c("sqrt_n", "custom"),
                   boot_tau = NULL,
@@ -243,6 +267,9 @@ lpmec <- function(Y,
                   boot_calibration_cut_grid = c(0.005, 0.010, 0.015, 0.020, 0.025, 0.035, 0.050),
                   boot_calibration_tail = c("separate", "equal_tail"),
                   boot_calibration_seed = NULL,
+                  boot_rbc_item_counts = NULL,
+                  boot_rbc_n_subsets = 10L,
+                  boot_rbc_seed = NULL,
                   partition_set = NULL,
                   fix_partitions = TRUE,
                   seed = NULL,
@@ -466,6 +493,13 @@ lpmec <- function(Y,
     warning("Only ", n_unique_groups, " unique observable groupings found. ",
             "Split-half estimation may be unreliable with fewer than 4 groupings.")
   }
+  boot_rbc_spec <- .lpmec_resolve_rbc_controls(
+    boot_ci_type = boot_ci_type,
+    observables_groupings = observables_groupings,
+    boot_rbc_item_counts = boot_rbc_item_counts,
+    boot_rbc_n_subsets = boot_rbc_n_subsets,
+    boot_rbc_seed = boot_rbc_seed
+  )
 
   m_spec <- .lpmec_resolve_m(
     n = length(Y),
@@ -506,6 +540,23 @@ lpmec <- function(Y,
     NULL
   }
   n_partition_actual <- if (fix_partitions) length(partition_list) else n_partition
+  boot_rbc_plan <- if (isTRUE(boot_rbc_spec$enabled)) {
+    .lpmec_make_rbc_plan(
+      observables_groupings = observables_groupings,
+      item_counts = boot_rbc_spec$item_counts,
+      n_subsets = boot_rbc_spec$n_subsets,
+      n_partition = n_partition_actual,
+      seed = boot_rbc_spec$seed
+    )
+  } else {
+    list()
+  }
+  if (isTRUE(boot_rbc_spec$enabled) && length(boot_rbc_plan) < 1L) {
+    warning(
+      "boot_ci_type = \"rbc\" has no valid lower item-count grid; returning uncorrected root intervals with RBC diagnostics.",
+      call. = FALSE
+    )
+  }
 
   # ============================================================================
 
@@ -535,6 +586,8 @@ lpmec <- function(Y,
     .lpmec_resolve_joint2_prior(mcmc_control$joint2_prior)
   }
   
+  boot_indices_by_boot <- vector("list", n_boot + 1L)
+  names(boot_indices_by_boot) <- as.character(seq_len(n_boot + 1L))
   for(booti_ in seq_len(n_boot + 1L)){
     if(booti_ == 1L){
       boot_indices <- seq_along(Y)
@@ -548,6 +601,7 @@ lpmec <- function(Y,
         boot_basis = if (boot_basis_supplied) boot_basis else NULL
       )
     }
+    boot_indices_by_boot[[as.character(booti_)]] <- boot_indices
 
     for(parti_ in seq_len(n_partition_actual)){
       current_partition <- if (fix_partitions) partition_list[[parti_]] else NULL
@@ -673,13 +727,14 @@ lpmec <- function(Y,
     theta_by_boot <- aggregate_field(field_name)
     theta0 <- unname(theta_by_boot[["1"]])
     theta_boot <- unname(theta_by_boot[names(theta_by_boot) != "1"])
+    summary_boot_ci_type <- if (boot_ci_type == "rbc") "root" else boot_ci_type
     summary <- .lpmec_summarize_resampling(
       theta0 = theta0,
       theta_boot = theta_boot,
       n = length(Y),
       m = boot_m_resolved,
       bootstrap_method = bootstrap_method,
-      boot_ci_type = boot_ci_type,
+      boot_ci_type = summary_boot_ci_type,
       alpha = boot_alpha,
       rate = boot_rate,
       tau = boot_tau
@@ -723,6 +778,110 @@ lpmec <- function(Y,
     "m_reduced_erv",
     "var_est_split"
   )
+
+  make_bootstrap_aggregates <- function(summaries) {
+    out <- data.frame(
+      BootIndex = boot_levels,
+      BootSampleSize = ifelse(boot_levels == 1L, length(Y), boot_m_resolved),
+      ValidPartitions = as.integer(valid_partitions_by_boot[as.character(boot_levels)]),
+      InvalidPartitions = as.integer(invalid_partitions_by_boot[as.character(boot_levels)])
+    )
+    for (field_name in summary_field_names) {
+      out[[field_name]] <-
+        unname(summaries[[field_name]]$theta_by_boot[as.character(boot_levels)])
+    }
+    out
+  }
+
+  run_rbc_pilots <- function() {
+    if (!isTRUE(boot_rbc_spec$enabled) || length(boot_rbc_plan) < 1L) {
+      return(data.frame())
+    }
+
+    rows <- list()
+    errors <- character(0L)
+    for (boot_ in boot_levels) {
+      boot_indices <- boot_indices_by_boot[[as.character(boot_)]]
+      for (plan_index in seq_along(boot_rbc_plan)) {
+        plan_entry <- boot_rbc_plan[[plan_index]]
+        subset_cols <- as.character(observables_groupings) %in% plan_entry$groups
+        subset_observables <- observables[boot_indices, subset_cols, drop = FALSE]
+        subset_groupings <- observables_groupings[subset_cols]
+        partition_values <- vector("list", length(plan_entry$partitions))
+        partition_valid_pilot <- rep(FALSE, length(plan_entry$partitions))
+
+        for (partition_index in seq_along(plan_entry$partitions)) {
+          current_partition <- plan_entry$partitions[[partition_index]]
+          pilot_fit <- try(lpmec_onerun(
+            Y[boot_indices],
+            subset_observables,
+            observables_groupings = subset_groupings,
+            make_observables_groupings = make_observables_groupings,
+            estimation_method = estimation_method,
+            latent_estimation_fn = latent_estimation_fn,
+            ordinal = ordinal,
+            mcmc_control = mcmc_control,
+            conda_env = conda_env,
+            conda_env_required = conda_env_required,
+            partition = current_partition,
+            partition_id = current_partition$partition_id
+          ), silent = TRUE)
+
+          if (inherits(pilot_fit, "try-error")) {
+            errors <- c(
+              errors,
+              paste0(
+                "boot ", boot_,
+                ", item_count ", plan_entry$item_count,
+                ", subset ", plan_entry$subset_index,
+                ", partition ", partition_index,
+                ": ", as.character(pilot_fit)[1L]
+              )
+            )
+            next
+          }
+          partition_values[[partition_index]] <- pilot_fit
+          split_correlation <- as.numeric(pilot_fit$split_correlation)[1L]
+          partition_valid_pilot[[partition_index]] <-
+            is.finite(split_correlation) && split_correlation > 0
+        }
+
+        row <- data.frame(
+          BootIndex = as.integer(boot_),
+          ItemCount = as.integer(plan_entry$item_count),
+          SubsetIndex = as.integer(plan_entry$subset_index),
+          ValidPartitions = sum(partition_valid_pilot, na.rm = TRUE),
+          InvalidPartitions = sum(!partition_valid_pilot, na.rm = TRUE),
+          stringsAsFactors = FALSE
+        )
+        for (field_name in summary_field_names) {
+          values <- vapply(partition_values, function(pilot_fit) {
+            if (is.null(pilot_fit) || !field_name %in% names(pilot_fit)) {
+              return(NA_real_)
+            }
+            as.numeric(pilot_fit[[field_name]])[1L]
+          }, numeric(1L))
+          values[!partition_valid_pilot] <- NA_real_
+          finite_values <- values[is.finite(values)]
+          row[[field_name]] <- if (length(finite_values) < 1L) {
+            NA_real_
+          } else {
+            as.numeric(theSumFxn(finite_values))
+          }
+        }
+        rows[[length(rows) + 1L]] <- row
+      }
+    }
+
+    out <- if (length(rows) < 1L) {
+      data.frame()
+    } else {
+      do.call(rbind, rows)
+    }
+    attr(out, "errors") <- errors
+    out
+  }
+
   field_summaries <- stats::setNames(
     lapply(summary_field_names, summarize_field),
     summary_field_names
@@ -730,6 +889,42 @@ lpmec <- function(Y,
 
   boot_calibration_coverage <- NULL
   boot_calibration_diagnostics <- NULL
+  boot_rbc_diagnostics <- NULL
+  boot_rbc_pilot_aggregates <- NULL
+  boot_rbc_raw_aggregates <- NULL
+  boot_rbc_errors <- NULL
+  if (boot_ci_type == "rbc") {
+    boot_rbc_raw_aggregates <- make_bootstrap_aggregates(field_summaries)
+    boot_rbc_pilot_aggregates <- run_rbc_pilots()
+    boot_rbc_errors <- attr(boot_rbc_pilot_aggregates, "errors")
+    rbc_result <- .lpmec_apply_rbc_summaries(
+      field_summaries = field_summaries,
+      pilot_aggregates = boot_rbc_pilot_aggregates,
+      summary_field_names = summary_field_names,
+      boot_levels = boot_levels,
+      full_count = boot_rbc_spec$full_count,
+      item_counts = boot_rbc_spec$item_counts,
+      aggregation_fn = theSumFxn,
+      n = length(Y),
+      m = boot_m_resolved,
+      bootstrap_method = bootstrap_method,
+      alpha = boot_alpha,
+      rate = boot_rate,
+      tau = boot_tau
+    )
+    field_summaries <- rbc_result$field_summaries
+    boot_rbc_diagnostics <- rbc_result$diagnostics
+    finite_fallback <- boot_rbc_diagnostics$status != "rbc" &
+      is.finite(boot_rbc_diagnostics$original_theta_raw)
+    if (any(finite_fallback, na.rm = TRUE)) {
+      warning(
+        "RBC was unavailable for ",
+        paste(boot_rbc_diagnostics$field[finite_fallback], collapse = ", "),
+        "; using uncorrected root summaries for those fields.",
+        call. = FALSE
+      )
+    }
+  }
   if (boot_ci_type == "root_calibrated") {
     if (boot_m_resolved < 3L) {
       stop("boot_ci_type = \"root_calibrated\" requires resolved boot_m >= 3.")
@@ -995,16 +1190,7 @@ lpmec <- function(Y,
     boot_calibration_diagnostics <- calibration_result$diagnostics
   }
 
-  bootstrap_aggregates <- data.frame(
-    BootIndex = boot_levels,
-    BootSampleSize = ifelse(boot_levels == 1L, length(Y), boot_m_resolved),
-    ValidPartitions = as.integer(valid_partitions_by_boot[as.character(boot_levels)]),
-    InvalidPartitions = as.integer(invalid_partitions_by_boot[as.character(boot_levels)])
-  )
-  for (field_name in summary_field_names) {
-    bootstrap_aggregates[[field_name]] <-
-      unname(field_summaries[[field_name]]$theta_by_boot[as.character(boot_levels)])
-  }
+  bootstrap_aggregates <- make_bootstrap_aggregates(field_summaries)
   root_draws <- lapply(field_summaries, function(summary) summary$root_draws)
   bootstrap_failure_diagnostics <- data.frame(
     field = summary_field_names,
@@ -1148,6 +1334,12 @@ lpmec <- function(Y,
       },
       "boot_calibration_coverage" = boot_calibration_coverage,
       "boot_calibration_diagnostics" = boot_calibration_diagnostics,
+      "boot_rbc_item_counts" = if (boot_ci_type == "rbc") boot_rbc_spec$item_counts else integer(0L),
+      "boot_rbc_n_subsets" = if (boot_ci_type == "rbc") boot_rbc_spec$n_subsets else NA_integer_,
+      "boot_rbc_diagnostics" = boot_rbc_diagnostics,
+      "boot_rbc_raw_aggregates" = boot_rbc_raw_aggregates,
+      "boot_rbc_pilot_aggregates" = boot_rbc_pilot_aggregates,
+      "boot_rbc_errors" = if (boot_ci_type == "rbc") boot_rbc_errors else character(0L),
       "partition_set" = if (fix_partitions) partition_list else NULL,
       "fix_partitions" = fix_partitions,
       "n_unique_partitions" = n_partition_actual,

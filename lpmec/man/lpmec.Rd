@@ -21,7 +21,7 @@ lpmec(
   boot_m_exponent = 0.7,
   boot_m_grid = NULL,
   boot_m_replace = NULL,
-  boot_ci_type = c("auto", "root", "root_calibrated", "percentile"),
+  boot_ci_type = c("auto", "root", "root_calibrated", "percentile", "rbc"),
   boot_alpha = 0.05,
   boot_rate = c("sqrt_n", "custom"),
   boot_tau = NULL,
@@ -30,6 +30,9 @@ lpmec(
   boot_calibration_cut_grid = c(0.005, 0.01, 0.015, 0.02, 0.025, 0.035, 0.05),
   boot_calibration_tail = c("separate", "equal_tail"),
   boot_calibration_seed = NULL,
+  boot_rbc_item_counts = NULL,
+  boot_rbc_n_subsets = 10L,
+  boot_rbc_seed = NULL,
   partition_set = NULL,
   fix_partitions = TRUE,
   seed = NULL,
@@ -102,7 +105,8 @@ m-out-of-n/subsampling. By default, replacement is used for
 \item{boot_ci_type}{Confidence interval type. \code{"auto"} uses percentile
 intervals for \code{"n_out_of_n"} and root-scaled intervals for m < n.
 \code{"root_calibrated"} uses nested subsampling to calibrate the root
-interval tail cutoffs.}
+interval tail cutoffs. \code{"rbc"} uses finite-item-count robust bias
+correction with root-scaled intervals.}
 
 \item{boot_alpha}{Confidence interval tail probability. Default is 0.05.}
 
@@ -129,6 +133,18 @@ lower and upper one-sided root intervals separately; \code{"equal_tail"}
 chooses one common equal-tail cutoff.}
 
 \item{boot_calibration_seed}{Optional seed for the nested calibration stage.}
+
+\item{boot_rbc_item_counts}{Optional integer vector of observable-group
+counts used to estimate the leading finite-M bias when
+\code{boot_ci_type = "rbc"}. Defaults to a fixed grid based on fractions
+of the full number of observable groups.}
+
+\item{boot_rbc_n_subsets}{Positive integer. Number of item subsets drawn at
+each value of \code{boot_rbc_item_counts}. Used only when
+\code{boot_ci_type = "rbc"}. Default is 10.}
+
+\item{boot_rbc_seed}{Optional seed for the item-subset schedule used by
+\code{boot_ci_type = "rbc"}.}
 
 \item{partition_set}{Optional user-supplied fixed partition list. Each element
 must contain \code{split1_names}, \code{split2_names}, and optionally
@@ -230,6 +246,9 @@ A list containing various estimates and statistics (in snake_case):
     transitions, mean accept probability, and orientation diagnostics.
   \item \code{x_est1} and \code{x_est2}: Split-half latent variable
     estimates from the original sample.
+  \item \code{boot_rbc_diagnostics}, \code{boot_rbc_raw_aggregates}, and
+    \code{boot_rbc_pilot_aggregates}: Robust-bias-correction diagnostics
+    returned when \code{boot_ci_type = "rbc"}.
   \item \code{Intermediary_*}: Per-run original-sample and bootstrap
     outputs, returned only when \code{return_intermediaries = TRUE}.
 }
@@ -267,6 +286,13 @@ whose estimated coverage reaches the nominal target. This is an asymptotic
 resampling calibration, not a finite-sample coverage guarantee. Its usual
 justification relies on scale separation for the outer and inner subsample
 sizes.
+
+With \code{boot_ci_type = "rbc"}, \code{lpmec()} estimates a leading
+finite-item-count bias by rerunning the estimator on a fixed, pre-specified
+grid of observable-group subsets and fitting each target summary to
+\code{a + b / M}. It subtracts \code{b / M} from the full-M estimate and
+constructs root intervals from bootstrap draws of the same bias-corrected
+statistic.
 }
 \examples{
 \donttest{
@@ -297,4 +323,8 @@ print(results)
 \references{
 Jerzak, C. T. and Jessee, S. A. (2025). Attenuation Bias with Latent Predictors.
 arXiv:2507.22218 [stat.AP]. \url{https://arxiv.org/abs/2507.22218}
+
+Calonico, S., Cattaneo, M. D., and Farrell, M. H. (2018). On the Effect of
+Bias Estimation on Coverage Accuracy in Nonparametric Inference. Journal of
+the American Statistical Association, 113, 767--779.
 }

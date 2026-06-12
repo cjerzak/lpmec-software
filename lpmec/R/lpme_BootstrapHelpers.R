@@ -199,7 +199,7 @@
     bootstrap_method,
     c("n_out_of_n", "m_out_of_n", "subsampling", "auto")
   )
-  boot_ci_type <- match.arg(boot_ci_type, c("auto", "root", "root_calibrated", "percentile"))
+  boot_ci_type <- match.arg(boot_ci_type, c("auto", "root", "root_calibrated", "percentile", "rbc"))
 
   median_aggregation <- is.character(partition_aggregation) &&
     length(partition_aggregation) == 1L &&
@@ -225,6 +225,278 @@
   list(
     bootstrap_method = bootstrap_method,
     boot_ci_type = boot_ci_type
+  )
+}
+
+.lpmec_resolve_rbc_controls <- function(boot_ci_type,
+                                        observables_groupings,
+                                        boot_rbc_item_counts = NULL,
+                                        boot_rbc_n_subsets = 10L,
+                                        boot_rbc_seed = NULL) {
+  groups <- unique(as.character(observables_groupings))
+  full_count <- length(groups)
+
+  if (boot_ci_type != "rbc") {
+    return(list(
+      enabled = FALSE,
+      full_count = full_count,
+      item_counts = integer(0L),
+      n_subsets = boot_rbc_n_subsets,
+      seed = boot_rbc_seed
+    ))
+  }
+
+  if (!is.numeric(boot_rbc_n_subsets) ||
+      length(boot_rbc_n_subsets) != 1L ||
+      !is.finite(boot_rbc_n_subsets) ||
+      boot_rbc_n_subsets != floor(boot_rbc_n_subsets) ||
+      boot_rbc_n_subsets < 1L) {
+    stop("'boot_rbc_n_subsets' must be a single positive integer.")
+  }
+  if (!is.null(boot_rbc_seed) &&
+      (!is.numeric(boot_rbc_seed) ||
+       length(boot_rbc_seed) != 1L ||
+       !is.finite(boot_rbc_seed))) {
+    stop("'boot_rbc_seed' must be NULL or a single finite numeric value.")
+  }
+
+  if (is.null(boot_rbc_item_counts)) {
+    item_counts <- unique(as.integer(ceiling(full_count * c(0.50, 0.67, 0.83, 0.90))))
+    item_counts <- sort(unique(item_counts[item_counts >= 4L & item_counts <= full_count - 1L]))
+  } else {
+    if (!is.numeric(boot_rbc_item_counts) ||
+        length(boot_rbc_item_counts) < 1L ||
+        any(!is.finite(boot_rbc_item_counts)) ||
+        any(boot_rbc_item_counts != floor(boot_rbc_item_counts))) {
+      stop("'boot_rbc_item_counts' must be NULL or an integer vector.")
+    }
+    item_counts <- sort(unique(as.integer(boot_rbc_item_counts)))
+    if (any(item_counts < 4L) || any(item_counts >= full_count)) {
+      stop("'boot_rbc_item_counts' must contain integers between 4 and M - 1, where M is the number of observable groups.")
+    }
+  }
+
+  list(
+    enabled = TRUE,
+    full_count = full_count,
+    item_counts = item_counts,
+    n_subsets = as.integer(boot_rbc_n_subsets),
+    seed = boot_rbc_seed
+  )
+}
+
+.lpmec_make_rbc_plan <- function(observables_groupings,
+                                 item_counts,
+                                 n_subsets,
+                                 n_partition,
+                                 seed = NULL) {
+  groups <- unique(as.character(observables_groupings))
+  item_counts <- as.integer(item_counts)
+  if (length(item_counts) < 1L) {
+    return(list())
+  }
+
+  .lpmec_with_local_seed(seed, {
+    out <- list()
+    for (item_count in item_counts) {
+      for (subset_index in seq_len(n_subsets)) {
+        subset_groups <- sample(groups, item_count, replace = FALSE)
+        subset_partitions <- .lpmec_make_partitions(
+          observables_groupings = subset_groups,
+          n_partition = n_partition,
+          partition_set = NULL,
+          seed = NULL
+        )
+        out[[length(out) + 1L]] <- list(
+          item_count = as.integer(item_count),
+          subset_index = as.integer(subset_index),
+          groups = subset_groups,
+          partitions = subset_partitions
+        )
+      }
+    }
+    out
+  })
+}
+
+.lpmec_fit_inverse_m_bias <- function(item_counts,
+                                      theta_by_count,
+                                      full_count,
+                                      theta_full) {
+  item_counts <- as.integer(item_counts)
+  theta_by_count <- as.numeric(theta_by_count)
+  theta_full <- as.numeric(theta_full)[1L]
+  full_count <- as.integer(full_count)
+
+  if (!is.finite(theta_full)) {
+    return(list(
+      status = "not_available",
+      theta_raw = theta_full,
+      theta_rbc = NA_real_,
+      bias_hat = NA_real_,
+      slope = NA_real_,
+      intercept = NA_real_,
+      n_pilot_counts = 0L
+    ))
+  }
+
+  finite_pilot <- is.finite(theta_by_count)
+  fit_counts <- c(item_counts[finite_pilot], full_count)
+  fit_theta <- c(theta_by_count[finite_pilot], theta_full)
+  if (length(unique(fit_counts)) < 2L || length(fit_theta) < 2L) {
+    return(list(
+      status = "insufficient_pilot_points",
+      theta_raw = theta_full,
+      theta_rbc = NA_real_,
+      bias_hat = NA_real_,
+      slope = NA_real_,
+      intercept = NA_real_,
+      n_pilot_counts = sum(finite_pilot)
+    ))
+  }
+
+  design <- cbind(1, 1 / fit_counts)
+  fit <- try(stats::lm.fit(design, fit_theta), silent = TRUE)
+  if (inherits(fit, "try-error") ||
+      length(fit$coefficients) < 2L ||
+      any(!is.finite(fit$coefficients[1:2]))) {
+    return(list(
+      status = "fit_failed",
+      theta_raw = theta_full,
+      theta_rbc = NA_real_,
+      bias_hat = NA_real_,
+      slope = NA_real_,
+      intercept = NA_real_,
+      n_pilot_counts = sum(finite_pilot)
+    ))
+  }
+
+  slope <- as.numeric(fit$coefficients[[2L]])
+  intercept <- as.numeric(fit$coefficients[[1L]])
+  bias_hat <- slope / full_count
+  list(
+    status = "rbc",
+    theta_raw = theta_full,
+    theta_rbc = theta_full - bias_hat,
+    bias_hat = bias_hat,
+    slope = slope,
+    intercept = intercept,
+    n_pilot_counts = sum(finite_pilot)
+  )
+}
+
+.lpmec_apply_rbc_summaries <- function(field_summaries,
+                                       pilot_aggregates,
+                                       summary_field_names,
+                                       boot_levels,
+                                       full_count,
+                                       item_counts,
+                                       aggregation_fn,
+                                       n,
+                                       m,
+                                       bootstrap_method,
+                                       alpha = 0.05,
+                                       rate = "sqrt_n",
+                                       tau = NULL) {
+  item_counts <- as.integer(item_counts)
+  boot_levels <- as.integer(boot_levels)
+  diagnostics <- vector("list", length(summary_field_names))
+  names(diagnostics) <- summary_field_names
+
+  aggregate_pilot_count <- function(field_name, boot_index, item_count) {
+    if (is.null(pilot_aggregates) ||
+        nrow(pilot_aggregates) < 1L ||
+        !field_name %in% names(pilot_aggregates)) {
+      return(NA_real_)
+    }
+    rows <- pilot_aggregates$BootIndex == boot_index &
+      pilot_aggregates$ItemCount == item_count
+    x <- as.numeric(pilot_aggregates[[field_name]][rows])
+    x <- x[is.finite(x)]
+    if (length(x) < 1L) {
+      return(NA_real_)
+    }
+    as.numeric(aggregation_fn(x))
+  }
+
+  for (field_name in summary_field_names) {
+    raw_summary <- field_summaries[[field_name]]
+    raw_theta_by_boot <- raw_summary$theta_by_boot
+    raw_theta_by_boot <- raw_theta_by_boot[as.character(boot_levels)]
+
+    fit_rows <- lapply(boot_levels, function(boot_index) {
+      theta_by_count <- vapply(item_counts, function(item_count) {
+        aggregate_pilot_count(field_name, boot_index, item_count)
+      }, numeric(1L))
+      fit <- .lpmec_fit_inverse_m_bias(
+        item_counts = item_counts,
+        theta_by_count = theta_by_count,
+        full_count = full_count,
+        theta_full = raw_theta_by_boot[[as.character(boot_index)]]
+      )
+      data.frame(
+        BootIndex = as.integer(boot_index),
+        field = field_name,
+        status = fit$status,
+        theta_raw = fit$theta_raw,
+        theta_rbc = fit$theta_rbc,
+        bias_hat = fit$bias_hat,
+        slope = fit$slope,
+        intercept = fit$intercept,
+        n_pilot_counts = as.integer(fit$n_pilot_counts),
+        stringsAsFactors = FALSE
+      )
+    })
+    fit_df <- do.call(rbind, fit_rows)
+    original_fit <- fit_df[fit_df$BootIndex == 1L, , drop = FALSE]
+    if (nrow(original_fit) < 1L) {
+      original_fit <- fit_df[1L, , drop = FALSE]
+    }
+
+    if (identical(original_fit$status[[1L]], "rbc")) {
+      theta_rbc_by_boot <- stats::setNames(fit_df$theta_rbc, as.character(fit_df$BootIndex))
+      theta0 <- unname(theta_rbc_by_boot[["1"]])
+      theta_boot <- unname(theta_rbc_by_boot[names(theta_rbc_by_boot) != "1"])
+      updated_summary <- .lpmec_summarize_resampling(
+        theta0 = theta0,
+        theta_boot = theta_boot,
+        n = n,
+        m = m,
+        bootstrap_method = bootstrap_method,
+        boot_ci_type = "root",
+        alpha = alpha,
+        rate = rate,
+        tau = tau
+      )
+      updated_summary$theta_by_boot <- theta_rbc_by_boot
+      updated_summary$rbc_bias_by_boot <- stats::setNames(fit_df$bias_hat, as.character(fit_df$BootIndex))
+      updated_summary$rbc_status_by_boot <- stats::setNames(fit_df$status, as.character(fit_df$BootIndex))
+      field_summaries[[field_name]] <- updated_summary
+    } else {
+      raw_summary$rbc_bias_by_boot <- stats::setNames(fit_df$bias_hat, as.character(fit_df$BootIndex))
+      raw_summary$rbc_status_by_boot <- stats::setNames(fit_df$status, as.character(fit_df$BootIndex))
+      field_summaries[[field_name]] <- raw_summary
+    }
+
+    boot_fit <- fit_df[fit_df$BootIndex != 1L, , drop = FALSE]
+    diagnostics[[field_name]] <- data.frame(
+      field = field_name,
+      status = original_fit$status[[1L]],
+      M = as.integer(full_count),
+      item_counts = paste(item_counts, collapse = ","),
+      original_theta_raw = original_fit$theta_raw[[1L]],
+      original_bias_hat = original_fit$bias_hat[[1L]],
+      original_theta_rbc = original_fit$theta_rbc[[1L]],
+      original_n_pilot_counts = as.integer(original_fit$n_pilot_counts[[1L]]),
+      bootstrap_rbc_draws = sum(boot_fit$status == "rbc", na.rm = TRUE),
+      bootstrap_nonrbc_draws = sum(boot_fit$status != "rbc", na.rm = TRUE),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  list(
+    field_summaries = field_summaries,
+    diagnostics = do.call(rbind, diagnostics)
   )
 }
 
@@ -647,7 +919,8 @@
                                         root_left_tail = NULL,
                                         root_right_tail = NULL) {
   bootstrap_method <- match.arg(bootstrap_method, c("n_out_of_n", "m_out_of_n", "subsampling"))
-  boot_ci_type <- match.arg(boot_ci_type, c("root", "root_calibrated", "percentile"))
+  boot_ci_type <- match.arg(boot_ci_type, c("root", "root_calibrated", "percentile", "rbc"))
+  summary_ci_type <- if (boot_ci_type == "rbc") "root" else boot_ci_type
   rate <- match.arg(rate, c("sqrt_n", "custom"))
   if (!is.numeric(alpha) ||
       length(alpha) != 1L ||
@@ -696,8 +969,8 @@
     n_draws = n_draws,
     n_failed = n_failed,
     success_rate = if ((n_draws + n_failed) > 0L) n_draws / (n_draws + n_failed) else NA_real_,
-    root_left_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
-    root_right_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
+    root_left_tail = if (summary_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
+    root_right_tail = if (summary_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
   )
   if (!is.finite(theta0) || n_draws < 2L) {
     return(empty)
@@ -706,7 +979,7 @@
   rate_m <- .lpmec_rate_value(m, rate = rate, tau = tau, label = "m")
   rate_n <- .lpmec_rate_value(n, rate = rate, tau = tau, label = "n")
 
-  if (boot_ci_type == "percentile") {
+  if (summary_ci_type == "percentile") {
     se <- stats::sd(theta_boot)
     lower <- stats::quantile(theta_boot, alpha / 2, na.rm = TRUE, names = FALSE)
     upper <- stats::quantile(theta_boot, 1 - alpha / 2, na.rm = TRUE, names = FALSE)
@@ -727,8 +1000,8 @@
     n_draws = n_draws,
     n_failed = n_failed,
     success_rate = n_draws / (n_draws + n_failed),
-    root_left_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
-    root_right_tail = if (boot_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
+    root_left_tail = if (summary_ci_type == "percentile") NA_real_ else as.numeric(root_left_tail),
+    root_right_tail = if (summary_ci_type == "percentile") NA_real_ else as.numeric(root_right_tail)
   )
 }
 
