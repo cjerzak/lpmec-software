@@ -4,6 +4,189 @@ f2a <- function(x){lpmec_env$jnp$array(x,lpmec_env$jnp$float32)}
 ai <- as.integer
 lpmec_env <- new.env( parent = emptyenv() )
 
+.lpmec_valid_estimation_methods <- function() {
+  c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_joint2", "mcmc_overimputation", "custom")
+}
+
+.lpmec_default_mcmc_control <- function() {
+  list(
+    backend = "pscl",
+    n_samples_warmup = 500L,
+    n_samples_mcmc = 1000L,
+    batch_size = 512L,
+    chain_method = "parallel",
+    subsample_method = "full",
+    n_thin_by = 1L,
+    n_chains = 2L,
+    outcome_prior = list(calibration = "data"),
+    joint2_prior = list()
+  )
+}
+
+.lpmec_resolve_mcmc_control <- function(mcmc_control,
+                                        n_obs = NULL,
+                                        inform_partial = FALSE) {
+  if (!is.list(mcmc_control)) {
+    stop("'mcmc_control' must be a list.")
+  }
+
+  default_mcmc_control <- .lpmec_default_mcmc_control()
+  user_params <- names(mcmc_control)
+  missing_params <- setdiff(names(default_mcmc_control), user_params)
+  if (isTRUE(inform_partial) &&
+      length(user_params) > 0L &&
+      length(missing_params) > 0L) {
+    message("Note: Partial mcmc_control provided. Using defaults for: ",
+            paste(missing_params, collapse = ", "))
+  }
+
+  mcmc_control <- utils::modifyList(default_mcmc_control, mcmc_control)
+
+  if (!mcmc_control$backend %in% c("pscl", "numpyro")) {
+    stop("mcmc_control$backend must be either 'pscl' or 'numpyro'. Received: '",
+         mcmc_control$backend, "'")
+  }
+  if (!is.numeric(mcmc_control$n_samples_warmup) ||
+      length(mcmc_control$n_samples_warmup) != 1L ||
+      !is.finite(mcmc_control$n_samples_warmup) ||
+      mcmc_control$n_samples_warmup < 1) {
+    stop("mcmc_control$n_samples_warmup must be a positive integer.")
+  }
+  if (!is.numeric(mcmc_control$n_samples_mcmc) ||
+      length(mcmc_control$n_samples_mcmc) != 1L ||
+      !is.finite(mcmc_control$n_samples_mcmc) ||
+      mcmc_control$n_samples_mcmc < 1) {
+    stop("mcmc_control$n_samples_mcmc must be a positive integer.")
+  }
+  if (!is.numeric(mcmc_control$n_chains) ||
+      length(mcmc_control$n_chains) != 1L ||
+      !is.finite(mcmc_control$n_chains) ||
+      mcmc_control$n_chains < 1) {
+    stop("mcmc_control$n_chains must be a positive integer.")
+  }
+  if (!mcmc_control$subsample_method %in% c("full", "batch")) {
+    stop("mcmc_control$subsample_method must be either 'full' or 'batch'. Received: '",
+         mcmc_control$subsample_method, "'")
+  }
+  if (mcmc_control$subsample_method == "batch" && !is.null(n_obs)) {
+    if (!is.numeric(mcmc_control$batch_size) ||
+        length(mcmc_control$batch_size) != 1L ||
+        !is.finite(mcmc_control$batch_size) ||
+        mcmc_control$batch_size < 1 ||
+        mcmc_control$batch_size >= n_obs) {
+      stop("mcmc_control$batch_size must be a single numeric value between 1 and nrow(observables) - 1 when subsample_method = 'batch'.")
+    }
+  }
+
+  mcmc_control
+}
+
+.lpmec_prepare_common_inputs <- function(Y,
+                                         observables,
+                                         observables_groupings,
+                                         estimation_method,
+                                         latent_estimation_fn,
+                                         ordinal,
+                                         mcmc_control,
+                                         inform_partial_mcmc = FALSE,
+                                         validate_joint2 = TRUE) {
+  if (is.null(Y)) {
+    stop("'Y' is required and cannot be NULL.")
+  }
+  if (!is.numeric(Y)) {
+    stop("'Y' must be a numeric vector.")
+  }
+  if (length(Y) < 10) {
+    stop("'Y' must have at least 10 observations. Received: ", length(Y))
+  }
+  if (all(is.na(Y))) {
+    stop("'Y' cannot be all NA values.")
+  }
+
+  if (is.null(observables)) {
+    stop("'observables' is required and cannot be NULL.")
+  }
+  if (!is.data.frame(observables) && !is.matrix(observables)) {
+    stop("'observables' must be a data.frame or matrix.")
+  }
+  if (nrow(observables) != length(Y)) {
+    stop("Number of rows in 'observables' (", nrow(observables),
+         ") must match length of 'Y' (", length(Y), ").")
+  }
+  if (ncol(observables) < 4) {
+    stop("'observables' must have at least 4 columns to allow split-half estimation. Received: ",
+         ncol(observables))
+  }
+
+  valid_methods <- .lpmec_valid_estimation_methods()
+  if (!estimation_method %in% valid_methods) {
+    stop("'estimation_method' must be one of: ", paste(valid_methods, collapse = ", "),
+         ". Received: '", estimation_method, "'")
+  }
+
+  if (estimation_method == "custom") {
+    if (is.null(latent_estimation_fn)) {
+      stop("'latent_estimation_fn' is required when estimation_method = 'custom'.")
+    }
+    if (!is.function(latent_estimation_fn)) {
+      stop("'latent_estimation_fn' must be a function.")
+    }
+  }
+
+  if (!is.logical(ordinal) || length(ordinal) != 1) {
+    stop("'ordinal' must be a single logical value (TRUE or FALSE).")
+  }
+
+  observables <- as.data.frame(observables)
+  if (is.null(observables_groupings)) {
+    observables_groupings <- colnames(observables)
+  }
+  if (length(observables_groupings) != ncol(observables)) {
+    stop("'observables_groupings' must have length equal to ncol(observables). ",
+         "Length of observables_groupings: ", length(observables_groupings),
+         ", ncol(observables): ", ncol(observables))
+  }
+
+  mcmc_control <- .lpmec_resolve_mcmc_control(
+    mcmc_control,
+    n_obs = nrow(observables),
+    inform_partial = inform_partial_mcmc
+  )
+  outcome_prior <- .lpmec_resolve_outcome_prior(Y, mcmc_control$outcome_prior)
+
+  n_unique_groups <- length(unique(observables_groupings))
+  if (n_unique_groups < 2L) {
+    stop("At least 2 unique observable groupings are required for split-half estimation. Received: ",
+         n_unique_groups)
+  }
+  if (n_unique_groups < 4L) {
+    warning("Only ", n_unique_groups, " unique observable groupings found. ",
+            "Split-half estimation may be unreliable with fewer than 4 groupings.")
+  }
+
+  na_prop <- mean(is.na(as.matrix(observables)))
+  if (na_prop > 0.5) {
+    warning("More than 50% of values in 'observables' are NA (",
+            round(na_prop * 100, 1), "%). Results may be unreliable.")
+  }
+
+  if (isTRUE(validate_joint2) && estimation_method == "mcmc_joint2") {
+    .lpmec_validate_mcmc_joint2_inputs(Y, observables, ordinal, mcmc_control)
+    .lpmec_resolve_joint2_prior(mcmc_control$joint2_prior)
+  }
+
+  list(
+    Y = Y,
+    observables = observables,
+    observables_groupings = observables_groupings,
+    estimation_method = estimation_method,
+    latent_estimation_fn = latent_estimation_fn,
+    ordinal = ordinal,
+    mcmc_control = mcmc_control,
+    outcome_prior = outcome_prior
+  )
+}
+
 .lpmec_numeric_observable_matrix <- function(observables, label = "'observables'") {
   if (!is.data.frame(observables) && !is.matrix(observables)) {
     stop(label, " must be a data.frame or matrix.")
@@ -270,6 +453,54 @@ lpmec_env <- new.env( parent = emptyenv() )
   }
 
   resolved
+}
+
+.lpmec_summarize_overimputation <- function(Y,
+                                            x_est_mcmc,
+                                            ability_draws,
+                                            outer_ability_draws = ability_draws,
+                                            n_imputations = 5L) {
+  summarize_one <- function(draws, normalize_imputations) {
+    Xobs_mean <- apply(draws, 1, function(x_) mean(x_))
+    Xobs_SE <- apply(draws, 1, function(x_) sd(x_))
+    dat_ <- cbind(Y, x_est_mcmc)
+    policy_priors <- cbind(seq_len(nrow(dat_)), 2, Xobs_mean, Xobs_SE)
+    overimp <- cbind(seq_len(nrow(dat_)), 2)
+
+    overimputed_data <- Amelia::amelia(
+      x = dat_,
+      m = n_imputations,
+      p2s = 0,
+      priors = policy_priors,
+      overimp = overimp,
+      parallel = "no"
+    )
+
+    overimputed_Y <- do.call(cbind, lapply(overimputed_data$imputations, function(l_) l_[, 1]))
+    overimputed_x <- do.call(cbind, lapply(overimputed_data$imputations, function(l_) l_[, 2]))
+    overimputed_x <- normalize_imputations(overimputed_x)
+    coefs <- unlist(sapply(seq_len(n_imputations), function(s_) {
+      coef(lm(overimputed_Y[, s_] ~ overimputed_x[, s_]))[2]
+    }))
+
+    list(coef = mean(coefs), se = sd(coefs))
+  }
+
+  outer <- summarize_one(
+    outer_ability_draws,
+    function(x) (x - mean(rowMeans(x))) / sd(rowMeans(x))
+  )
+  inner <- summarize_one(
+    apply(ability_draws, 2, function(x_) scale(x_)),
+    function(x) apply(x, 2, function(x_) scale(x_))
+  )
+
+  list(
+    bayesian_ols_coef_outer_normed = outer$coef,
+    bayesian_ols_se_outer_normed = outer$se,
+    bayesian_ols_coef_inner_normed = inner$coef,
+    bayesian_ols_se_inner_normed = inner$se
+  )
 }
 
 .lpmec_validate_joint2_prior_scalar <- function(value, name, positive = FALSE) {

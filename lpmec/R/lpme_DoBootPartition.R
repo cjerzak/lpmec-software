@@ -294,58 +294,28 @@ lpmec <- function(Y,
                   ){
   boot_basis_supplied <- !missing(boot_basis)
 
-  # ============================================================================
-  # INPUT VALIDATION
-  # ============================================================================
-
-  # Validate Y
-  if (missing(Y) || is.null(Y)) {
-    stop("'Y' is required and cannot be NULL.")
-  }
-  if (!is.numeric(Y)) {
-    stop("'Y' must be a numeric vector.")
-  }
-  if (length(Y) < 10) {
-    stop("'Y' must have at least 10 observations. Received: ", length(Y))
-  }
-  if (all(is.na(Y))) {
-    stop("'Y' cannot be all NA values.")
-  }
-
-  # Validate observables
-  if (missing(observables) || is.null(observables)) {
-    stop("'observables' is required and cannot be NULL.")
-  }
-  if (!is.data.frame(observables) && !is.matrix(observables)) {
-    stop("'observables' must be a data.frame or matrix.")
-  }
-  if (nrow(observables) != length(Y)) {
-    stop("Number of rows in 'observables' (", nrow(observables),
-         ") must match length of 'Y' (", length(Y), ").")
-  }
-  if (ncol(observables) < 4) {
-    stop("'observables' must have at least 4 columns to allow split-half estimation. Received: ",
-         ncol(observables))
+  prepared_inputs <- .lpmec_prepare_common_inputs(
+    Y = if (missing(Y)) NULL else Y,
+    observables = if (missing(observables)) NULL else observables,
+    observables_groupings = if (missing(observables_groupings)) NULL else observables_groupings,
+    estimation_method = estimation_method,
+    latent_estimation_fn = latent_estimation_fn,
+    ordinal = ordinal,
+    mcmc_control = mcmc_control,
+    inform_partial_mcmc = TRUE,
+    validate_joint2 = FALSE
+  )
+  Y <- prepared_inputs$Y
+  observables <- prepared_inputs$observables
+  observables_groupings <- prepared_inputs$observables_groupings
+  estimation_method <- prepared_inputs$estimation_method
+  latent_estimation_fn <- prepared_inputs$latent_estimation_fn
+  ordinal <- prepared_inputs$ordinal
+  mcmc_control <- prepared_inputs$mcmc_control
+  if (!boot_basis_supplied) {
+    boot_basis <- 1:length(Y)
   }
 
-  # Validate estimation_method
-  valid_methods <- c("em", "pca", "averaging", "mcmc", "mcmc_joint", "mcmc_joint2", "mcmc_overimputation", "custom")
-  if (!estimation_method %in% valid_methods) {
-    stop("'estimation_method' must be one of: ", paste(valid_methods, collapse = ", "),
-         ". Received: '", estimation_method, "'")
-  }
-
-  # Validate custom estimation function when method is "custom"
-  if (estimation_method == "custom") {
-    if (is.null(latent_estimation_fn)) {
-      stop("'latent_estimation_fn' is required when estimation_method = 'custom'.")
-    }
-    if (!is.function(latent_estimation_fn)) {
-      stop("'latent_estimation_fn' must be a function.")
-    }
-  }
-
-  # Validate bootstrap/partition parameters
   is_whole_number <- function(x) {
     is.numeric(x) && length(x) == 1L && is.finite(x) && x == floor(x)
   }
@@ -383,22 +353,9 @@ lpmec <- function(Y,
          "Length of boot_basis: ", length(boot_basis), ", length of Y: ", length(Y))
   }
 
-  # Validate ordinal parameter
-  if (!is.logical(ordinal) || length(ordinal) != 1) {
-    stop("'ordinal' must be a single logical value (TRUE or FALSE).")
-  }
-
-  # Validate return_intermediaries
   if (!is.logical(return_intermediaries) || length(return_intermediaries) != 1) {
     stop("'return_intermediaries' must be a single logical value (TRUE or FALSE).")
   }
-  if (!is.list(mcmc_control)) {
-    stop("'mcmc_control' must be a list.")
-  }
-  mcmc_control <- utils::modifyList(
-    list(backend = "pscl", joint2_prior = list()),
-    mcmc_control
-  )
 
   # Resolve summarizing function for across-partition/boot aggregation
   theSumFxn <- .lpmec_resolve_partition_aggregation(
@@ -462,37 +419,6 @@ lpmec <- function(Y,
     set.seed(as.integer(seed))
   }
 
-  # coerce to data.frame (before groupings check so matrix inputs get column names)
-  observables <- as.data.frame( observables )
-
-  # If observables_groupings is NULL (e.g., matrix input with no colnames),
-  # fall back to column names of the coerced data.frame
-  if (is.null(observables_groupings)) {
-    observables_groupings <- colnames(observables)
-  }
-  if (length(observables_groupings) != ncol(observables)) {
-    stop("'observables_groupings' must have length equal to ncol(observables). ",
-         "Length of observables_groupings: ", length(observables_groupings),
-         ", ncol(observables): ", ncol(observables))
-  }
-
-  # Check for excessive missing data (warning only)
-  na_prop <- mean(is.na(as.matrix(observables)))
-  if (na_prop > 0.5) {
-    warning("More than 50% of values in 'observables' are NA (",
-            round(na_prop * 100, 1), "%). Results may be unreliable.")
-  }
-
-  # Warn about potential issues with small samples
-  n_unique_groups <- length(unique(observables_groupings))
-  if (n_unique_groups < 2L) {
-    stop("At least 2 unique observable groupings are required for split-half estimation. Received: ",
-         n_unique_groups)
-  }
-  if (n_unique_groups < 4L) {
-    warning("Only ", n_unique_groups, " unique observable groupings found. ",
-            "Split-half estimation may be unreliable with fewer than 4 groupings.")
-  }
   boot_rbc_spec <- .lpmec_resolve_rbc_controls(
     boot_ci_type = boot_ci_type,
     observables_groupings = observables_groupings,
@@ -558,9 +484,6 @@ lpmec <- function(Y,
     )
   }
 
-  # ============================================================================
-
-  # Orient the observables if orientation_signs are provided
   if (!is.null(orientation_signs)) {
     if (!is.numeric(orientation_signs) || length(orientation_signs) != ncol(observables)) {
       stop("orientation_signs must be a numeric vector of length equal to ncol(observables).")
@@ -1209,75 +1132,125 @@ lpmec <- function(Y,
     )
   }
 
-  ols_summary <- field_summaries$ols_coef
-  corrected_ols_summary <- field_summaries$corrected_ols_coef
-  corrected_ols_alt_summary <- field_summaries$corrected_ols_coef_alt
-  iv_summary <- field_summaries$iv_coef
-  corrected_iv_summary <- field_summaries$corrected_iv_coef
-  bayes_outer_summary <- field_summaries$bayesian_ols_coef_outer_normed
-  bayes_inner_summary <- field_summaries$bayesian_ols_coef_inner_normed
-  m_stage_1_summary <- field_summaries$m_stage_1_erv
-  m_reduced_summary <- field_summaries$m_reduced_erv
+  summary_result_fields <- function(specs) {
+    out <- list()
+    for (spec in specs) {
+      summary <- spec$summary
+      out[[spec$coef]] <- summary$estimate
+      if (!is.null(spec$parametric_se)) {
+        out[[spec$parametric_se]] <- aggregate_parametric_se(spec$parametric_source)
+      }
+      out[[spec$se]] <- summary$se
+      out[[spec$lower]] <- summary$lower
+      out[[spec$upper]] <- summary$upper
+      out[[spec$tstat]] <- tstat_from_summary(summary)
+    }
+    out
+  }
+
+  core_results <- c(
+    summary_result_fields(list(
+      list(
+        summary = field_summaries$ols_coef,
+        coef = "ols_coef",
+        se = "ols_se",
+        lower = "ols_lower",
+        upper = "ols_upper",
+        tstat = "ols_tstat"
+      )
+    )),
+    list(
+      "corrected_ols_coef_a" = estimate_field("corrected_ols_coef_a"),
+      "corrected_ols_coef_b" = estimate_field("corrected_ols_coef_b")
+    ),
+    summary_result_fields(list(
+      list(
+        summary = field_summaries$corrected_ols_coef,
+        coef = "corrected_ols_coef",
+        se = "corrected_ols_se",
+        lower = "corrected_ols_lower",
+        upper = "corrected_ols_upper",
+        tstat = "corrected_ols_tstat"
+      ),
+      list(
+        summary = field_summaries$corrected_ols_coef_alt,
+        coef = "corrected_ols_coef_alt",
+        se = "corrected_ols_se_alt",
+        lower = "corrected_ols_lower_alt",
+        upper = "corrected_ols_upper_alt",
+        tstat = "corrected_ols_tstat_alt"
+      )
+    )),
+    list(
+      "iv_coef_a" = estimate_field("iv_coef_a"),
+      "iv_coef_b" = estimate_field("iv_coef_b")
+    ),
+    summary_result_fields(list(
+      list(
+        summary = field_summaries$iv_coef,
+        coef = "iv_coef",
+        se = "iv_se",
+        lower = "iv_lower",
+        upper = "iv_upper",
+        tstat = "iv_tstat"
+      )
+    )),
+    list(
+      "corrected_iv_coef_a" = estimate_field("corrected_iv_coef_a"),
+      "corrected_iv_coef_b" = estimate_field("corrected_iv_coef_b")
+    ),
+    summary_result_fields(list(
+      list(
+        summary = field_summaries$corrected_iv_coef,
+        coef = "corrected_iv_coef",
+        se = "corrected_iv_se",
+        lower = "corrected_iv_lower",
+        upper = "corrected_iv_upper",
+        tstat = "corrected_iv_tstat"
+      ),
+      list(
+        summary = field_summaries$bayesian_ols_coef_outer_normed,
+        coef = "bayesian_ols_coef_outer_normed",
+        parametric_se = "bayesian_ols_se_outer_normed_parametric",
+        parametric_source = "bayesian_ols_se_outer_normed",
+        se = "bayesian_ols_se_outer_normed",
+        lower = "bayesian_ols_lower_outer_normed",
+        upper = "bayesian_ols_upper_outer_normed",
+        tstat = "bayesian_ols_tstat_outer_normed"
+      ),
+      list(
+        summary = field_summaries$bayesian_ols_coef_inner_normed,
+        coef = "bayesian_ols_coef_inner_normed",
+        parametric_se = "bayesian_ols_se_inner_normed_parametric",
+        parametric_source = "bayesian_ols_se_inner_normed",
+        se = "bayesian_ols_se_inner_normed",
+        lower = "bayesian_ols_lower_inner_normed",
+        upper = "bayesian_ols_upper_inner_normed",
+        tstat = "bayesian_ols_tstat_inner_normed"
+      ),
+      list(
+        summary = field_summaries$m_stage_1_erv,
+        coef = "m_stage_1_erv",
+        se = "m_stage_1_erv_se",
+        lower = "m_stage_1_erv_lower",
+        upper = "m_stage_1_erv_upper",
+        tstat = "m_stage_1_erv_tstat"
+      ),
+      list(
+        summary = field_summaries$m_reduced_erv,
+        coef = "m_reduced_erv",
+        se = "m_reduced_erv_se",
+        lower = "m_reduced_erv_lower",
+        upper = "m_reduced_erv_upper",
+        tstat = "m_reduced_erv_tstat"
+      )
+    ))
+  )
   var_est_split_summary <- field_summaries$var_est_split
 
-  results <- list(
-      # Naive OLS
-      "ols_coef"   = ols_summary$estimate,
-      "ols_se"     = ols_summary$se,
-      "ols_lower"  = ols_summary$lower,
-      "ols_upper"  = ols_summary$upper,
-      "ols_tstat"  = tstat_from_summary(ols_summary),
-      
-      # Corrected OLS
-      "corrected_ols_coef_a" = estimate_field("corrected_ols_coef_a"),
-      "corrected_ols_coef_b" = estimate_field("corrected_ols_coef_b"),
-      "corrected_ols_coef" = corrected_ols_summary$estimate,
-      "corrected_ols_se"   = corrected_ols_summary$se,
-      "corrected_ols_lower" = corrected_ols_summary$lower,
-      "corrected_ols_upper" = corrected_ols_summary$upper,
-      "corrected_ols_tstat" = tstat_from_summary(corrected_ols_summary),
-      
-      # Alternative corrected OLS
-      "corrected_ols_coef_alt" = corrected_ols_alt_summary$estimate,
-      "corrected_ols_se_alt"   = corrected_ols_alt_summary$se,
-      "corrected_ols_lower_alt" = corrected_ols_alt_summary$lower,
-      "corrected_ols_upper_alt" = corrected_ols_alt_summary$upper,
-      "corrected_ols_tstat_alt" = tstat_from_summary(corrected_ols_alt_summary),
-      
-      # IV regression
-      "iv_coef_a" = estimate_field("iv_coef_a"),
-      "iv_coef_b" = estimate_field("iv_coef_b"),
-      "iv_coef" = iv_summary$estimate,
-      "iv_se" = iv_summary$se,
-      "iv_lower" = iv_summary$lower,
-      "iv_upper" = iv_summary$upper,
-      "iv_tstat" = tstat_from_summary(iv_summary),
-      
-      # Corrected IV
-      "corrected_iv_coef_a" = estimate_field("corrected_iv_coef_a"),
-      "corrected_iv_coef_b" = estimate_field("corrected_iv_coef_b"),
-      "corrected_iv_coef" = corrected_iv_summary$estimate,
-      "corrected_iv_se" = corrected_iv_summary$se,
-      "corrected_iv_lower" = corrected_iv_summary$lower,
-      "corrected_iv_upper" = corrected_iv_summary$upper,
-      "corrected_iv_tstat" = tstat_from_summary(corrected_iv_summary),
-      
-      # Bayesian OLS (outer-normed)
-      "bayesian_ols_coef_outer_normed" = bayes_outer_summary$estimate,
-      "bayesian_ols_se_outer_normed_parametric" = aggregate_parametric_se("bayesian_ols_se_outer_normed"),
-      "bayesian_ols_se_outer_normed" = bayes_outer_summary$se,
-      "bayesian_ols_lower_outer_normed" = bayes_outer_summary$lower,
-      "bayesian_ols_upper_outer_normed" = bayes_outer_summary$upper,
-      "bayesian_ols_tstat_outer_normed" = tstat_from_summary(bayes_outer_summary),
-      
-      # Bayesian OLS (inner-normed)
-      "bayesian_ols_coef_inner_normed" = bayes_inner_summary$estimate,
-      "bayesian_ols_se_inner_normed_parametric" = aggregate_parametric_se("bayesian_ols_se_inner_normed"),
-      "bayesian_ols_se_inner_normed" = bayes_inner_summary$se,
-      "bayesian_ols_lower_inner_normed" = bayes_inner_summary$lower,
-      "bayesian_ols_upper_inner_normed" = bayes_inner_summary$upper,
-      "bayesian_ols_tstat_inner_normed" = tstat_from_summary(bayes_inner_summary),
-
+  results <- c(
+    core_results,
+    list(
       "mcmc_joint2_ability_mean_ess_pct" = estimate_field("mcmc_joint2_ability_mean_ess_pct"),
       "mcmc_joint2_ability_min_ess_pct" = estimate_field("mcmc_joint2_ability_min_ess_pct"),
       "mcmc_joint2_max_rhat" = estimate_field("mcmc_joint2_max_rhat"),
@@ -1286,29 +1259,12 @@ lpmec <- function(Y,
       "mcmc_joint2_orientation_n_flipped" = estimate_field("mcmc_joint2_orientation_n_flipped"),
       "mcmc_joint2_orientation_prop_flipped" = estimate_field("mcmc_joint2_orientation_prop_flipped"),
       "mcmc_joint2_orientation_min_abs_cor" = estimate_field("mcmc_joint2_orientation_min_abs_cor"),
-      
-      # Robustness-value measures 
-      "m_stage_1_erv" = m_stage_1_summary$estimate,
-      "m_stage_1_erv_se" = m_stage_1_summary$se,
-      "m_stage_1_erv_lower" = m_stage_1_summary$lower,
-      "m_stage_1_erv_upper" = m_stage_1_summary$upper,
-      "m_stage_1_erv_tstat" = tstat_from_summary(m_stage_1_summary),
-      
-      "m_reduced_erv" = m_reduced_summary$estimate,
-      "m_reduced_erv_se" = m_reduced_summary$se,
-      "m_reduced_erv_lower" = m_reduced_summary$lower,
-      "m_reduced_erv_upper" = m_reduced_summary$upper,
-      "m_reduced_erv_tstat" = tstat_from_summary(m_reduced_summary),
-      
-      # Final single-run estimates for x
+
       "x_est1" = first_intermediary_column(LatentRunResults$Intermediary_x_est1),
       "x_est2" = first_intermediary_column(LatentRunResults$Intermediary_x_est2),
-      
-      # Additional summary of the cross-split variance
       "var_est_split"    = var_est_split_summary$estimate,
       "var_est_split_se" = var_est_split_summary$se,
 
-      # Bootstrap/subsampling diagnostics
       "bootstrap_method" = bootstrap_method,
       "boot_m" = boot_m_resolved,
       "boot_m_ratio" = boot_m_resolved / length(Y),
@@ -1350,7 +1306,7 @@ lpmec <- function(Y,
       "root_draws" = root_draws,
       "bootstrap_aggregates" = bootstrap_aggregates,
       "bootstrap_failure_diagnostics" = bootstrap_failure_diagnostics
-    )
+    ))
   if (return_intermediaries) {
     results <- c(results, LatentRunResults)
   }

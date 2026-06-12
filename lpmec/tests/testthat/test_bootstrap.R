@@ -36,12 +36,33 @@ test_that("partition aggregation helpers implement built-in strategies", {
   expect_equal(custom_fxn(c(1, 4, 10)), 9)
 })
 
-test_that("lpmec bootstrap aggregation works with n_boot > 1", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+test_that("overimputation helper returns finite outer and inner summaries", {
+  set.seed(44)
+  n <- 20L
+  x <- rnorm(n)
+  Y <- 0.5 + x + rnorm(n, sd = 0.2)
+  ability_draws <- replicate(6L, x + rnorm(n, sd = 0.1))
 
-  res <- lpmec(Y, obs, n_boot = 3, n_partition = 2, estimation_method = "pca")
+  out <- suppressMessages(lpmec:::.lpmec_summarize_overimputation(
+    Y = Y,
+    x_est_mcmc = scale(x),
+    ability_draws = ability_draws,
+    n_imputations = 2L
+  ))
+
+  expect_true(all(c(
+    "bayesian_ols_coef_outer_normed",
+    "bayesian_ols_se_outer_normed",
+    "bayesian_ols_coef_inner_normed",
+    "bayesian_ols_se_inner_normed"
+  ) %in% names(out)))
+  expect_true(all(is.finite(unlist(out))))
+})
+
+test_that("lpmec bootstrap aggregation works with n_boot > 1", {
+  dat <- make_lpmec_test_data()
+
+  res <- lpmec(dat$Y, dat$obs, n_boot = 3, n_partition = 2, estimation_method = "pca")
 
   expect_s3_class(res, "lpmec")
   # Bootstrap should produce standard errors
@@ -53,11 +74,9 @@ test_that("lpmec bootstrap aggregation works with n_boot > 1", {
 })
 
 test_that("lpmec partition aggregation works with n_partition > 1", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 1, n_partition = 3, estimation_method = "pca")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 3, estimation_method = "pca")
 
   expect_s3_class(res, "lpmec")
   expect_true("ols_coef" %in% names(res))
@@ -65,15 +84,13 @@ test_that("lpmec partition aggregation works with n_partition > 1", {
 })
 
 test_that("lpmec allows median aggregation with n-out-of-n bootstrap without advisory warning", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
   warnings <- character(0L)
   res <- withCallingHandlers(
     suppressMessages(lpmec(
-      Y,
-      obs,
+	      dat$Y,
+	      dat$obs,
       n_boot = 1,
       n_partition = 3,
       estimation_method = "pca",
@@ -91,11 +108,9 @@ test_that("lpmec allows median aggregation with n-out-of-n bootstrap without adv
 })
 
 test_that("lpmec supports n_boot = 0 with one original-sample partition", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+  res <- lpmec(dat$Y, dat$obs, n_boot = 0, n_partition = 1,
                estimation_method = "averaging")
 
   expect_s3_class(res, "lpmec")
@@ -128,27 +143,23 @@ test_that("lpmec supports n_boot = 0 with one original-sample partition", {
 })
 
 test_that("lpmec standard OLS is deterministic with n_boot = 0", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res1 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+  res1 <- lpmec(dat$Y, dat$obs, n_boot = 0, n_partition = 1,
                 estimation_method = "averaging")
-  res2 <- lpmec(Y, obs, n_boot = 0, n_partition = 1,
+  res2 <- lpmec(dat$Y, dat$obs, n_boot = 0, n_partition = 1,
                 estimation_method = "averaging")
 
-  expected_ols <- coef(lm(Y ~ scale(apply(obs, 1, mean))))[2]
+  expected_ols <- coef(lm(dat$Y ~ scale(apply(dat$obs, 1, mean))))[2]
 
   expect_identical(unname(res1$ols_coef), unname(res2$ols_coef))
   expect_equal(unname(res1$ols_coef), unname(expected_ols))
 })
 
 test_that("lpmec supports n_boot = 0 with multiple original-sample partitions", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 0, n_partition = 3,
+  res <- lpmec(dat$Y, dat$obs, n_boot = 0, n_partition = 3,
                estimation_method = "averaging")
 
   expect_s3_class(res, "lpmec")
@@ -159,11 +170,9 @@ test_that("lpmec supports n_boot = 0 with multiple original-sample partitions", 
 })
 
 test_that("lpmec produces confidence intervals with sufficient bootstrap", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 5, n_partition = 2, estimation_method = "pca")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 5, n_partition = 2, estimation_method = "pca")
 
   # Should have lower and upper bounds
 
@@ -179,13 +188,10 @@ test_that("lpmec produces confidence intervals with sufficient bootstrap", {
 })
 
 test_that("lpmec with stratified bootstrap (boot_basis) works", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
-  # Create a grouping variable for stratified bootstrap
+  dat <- make_lpmec_test_data()
   boot_groups <- rep(1:10, each = 8)
 
-  res <- lpmec(Y, obs, n_boot = 2, n_partition = 1, boot_basis = boot_groups,
+  res <- lpmec(dat$Y, dat$obs, n_boot = 2, n_partition = 1, boot_basis = boot_groups,
               estimation_method = "pca")
 
   expect_s3_class(res, "lpmec")
@@ -193,12 +199,10 @@ test_that("lpmec with stratified bootstrap (boot_basis) works", {
 })
 
 test_that("lpmec stratified bootstrap handles unequal stratum sizes", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   boot_groups <- c(rep("small", 10), rep("medium", 20), rep("large", 50))
 
-  res <- lpmec(Y, obs, n_boot = 1, n_partition = 1, boot_basis = boot_groups,
+  res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, boot_basis = boot_groups,
               estimation_method = "pca")
 
   expect_s3_class(res, "lpmec")
@@ -207,11 +211,9 @@ test_that("lpmec stratified bootstrap handles unequal stratum sizes", {
 })
 
 test_that("lpmec intermediary results are stored when return_intermediaries = TRUE", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 2, n_partition = 2, estimation_method = "pca",
+  res <- lpmec(dat$Y, dat$obs, n_boot = 2, n_partition = 2, estimation_method = "pca",
               return_intermediaries = TRUE)
 
   expect_s3_class(res, "lpmec")
@@ -225,11 +227,9 @@ test_that("lpmec intermediary results are stored when return_intermediaries = TR
 })
 
 test_that("lpmec omits intermediary results when return_intermediaries = FALSE", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 2, n_partition = 2, estimation_method = "pca",
+  res <- lpmec(dat$Y, dat$obs, n_boot = 2, n_partition = 2, estimation_method = "pca",
               return_intermediaries = FALSE)
 
   expect_s3_class(res, "lpmec")
@@ -238,11 +238,9 @@ test_that("lpmec omits intermediary results when return_intermediaries = FALSE",
 })
 
 test_that("lpmec var_est_split is computed correctly", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 2, n_partition = 3, estimation_method = "pca")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 2, n_partition = 3, estimation_method = "pca")
 
   # var_est_split should exist
   expect_true("var_est_split" %in% names(res))
@@ -251,26 +249,22 @@ test_that("lpmec var_est_split is computed correctly", {
 })
 
 test_that("lpmec var_est_split is available with one partition", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 2, n_partition = 1, estimation_method = "pca")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 2, n_partition = 1, estimation_method = "pca")
 
   expect_true(is.numeric(res$var_est_split))
   expect_false(is.na(res$var_est_split))
 })
 
 test_that("lpmec default partition aggregation matches explicit median", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
   set.seed(456)
-  default_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+  default_res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 3,
                        estimation_method = "pca")
   set.seed(456)
-  median_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+  median_res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 3,
                       estimation_method = "pca",
                       partition_aggregation = "median")
 
@@ -280,14 +274,12 @@ test_that("lpmec default partition aggregation matches explicit median", {
 })
 
 test_that("lpmec supports winsorized and custom partition aggregation", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  winsorized_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+  winsorized_res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 3,
                           estimation_method = "pca",
                           partition_aggregation = "winsorized_mean")
-  custom_res <- lpmec(Y, obs, n_boot = 1, n_partition = 3,
+  custom_res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 3,
                       estimation_method = "pca",
                       partition_aggregation = function(x) mean(x))
 

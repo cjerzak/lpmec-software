@@ -8,11 +8,9 @@ skip_on_cran()
 # ==============================================================================
 
 test_that("lpmec_onerun works with EM estimation (default)", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec_onerun(Y, obs, estimation_method = "em")
+  res <- lpmec_onerun(dat$Y, dat$obs, estimation_method = "em")
 
   expect_s3_class(res, "lpmec_onerun")
   expect_true(all(c("ols_coef", "x_est1", "x_est2") %in% names(res)))
@@ -24,11 +22,9 @@ test_that("lpmec_onerun works with EM estimation (default)", {
 })
 
 test_that("lpmec works with EM estimation (default)", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "em")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, estimation_method = "em")
 
   expect_s3_class(res, "lpmec")
   expect_true("ols_coef" %in% names(res))
@@ -41,11 +37,9 @@ test_that("lpmec works with EM estimation (default)", {
 # ==============================================================================
 
 test_that("lpmec_onerun works with averaging estimation", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec_onerun(Y, obs, estimation_method = "averaging")
+  res <- lpmec_onerun(dat$Y, dat$obs, estimation_method = "averaging")
 
   expect_s3_class(res, "lpmec_onerun")
   expect_true(all(c("ols_coef", "x_est1", "x_est2") %in% names(res)))
@@ -54,11 +48,9 @@ test_that("lpmec_onerun works with averaging estimation", {
 })
 
 test_that("lpmec works with averaging estimation", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
-  res <- lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "averaging")
+  res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, estimation_method = "averaging")
 
   expect_s3_class(res, "lpmec")
   expect_true("ols_coef" %in% names(res))
@@ -69,16 +61,14 @@ test_that("lpmec works with averaging estimation", {
 # ==============================================================================
 
 test_that("lpmec_onerun works with custom estimation function", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
   # Simple custom function: row means
   custom_fn <- function(x) {
     rowMeans(x, na.rm = TRUE)
   }
 
-  res <- lpmec_onerun(Y, obs, estimation_method = "custom",
+  res <- lpmec_onerun(dat$Y, dat$obs, estimation_method = "custom",
                      latent_estimation_fn = custom_fn)
 
   expect_s3_class(res, "lpmec_onerun")
@@ -87,15 +77,13 @@ test_that("lpmec_onerun works with custom estimation function", {
 })
 
 test_that("lpmec works with custom estimation function", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
   custom_fn <- function(x) {
     rowMeans(x, na.rm = TRUE)
   }
 
-  res <- lpmec(Y, obs, n_boot = 1, n_partition = 1,
+  res <- lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1,
               estimation_method = "custom",
               latent_estimation_fn = custom_fn)
 
@@ -104,9 +92,7 @@ test_that("lpmec works with custom estimation function", {
 })
 
 test_that("custom estimation with PCA-like function works", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
 
   # Custom PCA-like function
   custom_pca <- function(x) {
@@ -116,7 +102,7 @@ test_that("custom estimation with PCA-like function works", {
     pca_out$x[, 1]
   }
 
-  res <- lpmec_onerun(Y, obs, estimation_method = "custom",
+  res <- lpmec_onerun(dat$Y, dat$obs, estimation_method = "custom",
                      latent_estimation_fn = custom_pca)
 
   expect_s3_class(res, "lpmec_onerun")

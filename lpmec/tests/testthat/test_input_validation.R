@@ -8,26 +8,25 @@ skip_on_cran()
 # ==============================================================================
 
 test_that("lpmec_onerun errors on NULL Y", {
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
-  expect_error(lpmec_onerun(NULL, obs), "'Y' is required")
+  dat <- make_lpmec_test_data()
+  expect_error(lpmec_onerun(NULL, dat$obs), "'Y' is required")
 })
 
 test_that("lpmec_onerun errors on non-numeric Y", {
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   Y_char <- rep("a", 80)
-  expect_error(lpmec_onerun(Y_char, obs), "'Y' must be a numeric vector")
+  expect_error(lpmec_onerun(Y_char, dat$obs), "'Y' must be a numeric vector")
 })
 
 test_that("lpmec_onerun errors on Y with too few observations", {
-  obs <- as.data.frame(matrix(sample(c(0, 1), 5 * 6, replace = TRUE), ncol = 6))
-  Y <- rnorm(5)
-  expect_error(lpmec_onerun(Y, obs), "at least 10 observations")
+  dat <- make_lpmec_test_data(n = 5L)
+  expect_error(lpmec_onerun(dat$Y, dat$obs), "at least 10 observations")
 })
 
 test_that("lpmec_onerun errors on all-NA Y", {
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   Y <- rep(NA_real_, 80)
-  expect_error(lpmec_onerun(Y, obs), "cannot be all NA")
+  expect_error(lpmec_onerun(Y, dat$obs), "cannot be all NA")
 })
 
 # ==============================================================================
@@ -35,36 +34,33 @@ test_that("lpmec_onerun errors on all-NA Y", {
 # ==============================================================================
 
 test_that("lpmec_onerun errors on NULL observables", {
-  Y <- rnorm(80)
-  expect_error(lpmec_onerun(Y, NULL), "'observables' is required")
+  dat <- make_lpmec_test_data()
+  expect_error(lpmec_onerun(dat$Y, NULL), "'observables' is required")
 })
 
 test_that("lpmec_onerun errors on observables with wrong number of rows", {
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 50 * 6, replace = TRUE), ncol = 6))
-  expect_error(lpmec_onerun(Y, obs), "must match length of 'Y'")
+  dat <- make_lpmec_test_data()
+  short_obs <- make_lpmec_test_data(n = 50L)$obs
+  expect_error(lpmec_onerun(dat$Y, short_obs), "must match length of 'Y'")
 })
 
 test_that("lpmec_onerun errors on observables with too few columns", {
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 3, replace = TRUE), ncol = 3))
-  expect_error(lpmec_onerun(Y, obs), "at least 4 columns")
+  dat <- make_lpmec_test_data(p = 3L)
+  expect_error(lpmec_onerun(dat$Y, dat$obs), "at least 4 columns")
 })
 
 test_that("lpmec_onerun errors on observables_groupings with wrong length", {
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, observables_groupings = paste0("g", 1:4),
+    lpmec_onerun(dat$Y, dat$obs, observables_groupings = paste0("g", 1:4),
                  estimation_method = "pca"),
     "'observables_groupings' must have length equal to ncol\\(observables\\)"
   )
 })
 
 test_that("lpmec_onerun warns on excessive missing data", {
-  set.seed(456)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 8, replace = TRUE), ncol = 8))
+  dat <- make_lpmec_test_data(p = 8L, seed = 456L)
+  obs <- dat$obs
 
   # Set > 50% of values to NA in a controlled way
   # Set columns 5-8 completely to NA (50% of columns), plus some extra
@@ -76,7 +72,7 @@ test_that("lpmec_onerun warns on excessive missing data", {
   warning_raised <- FALSE
   tryCatch(
     withCallingHandlers(
-      lpmec_onerun(Y, obs, estimation_method = "averaging"),
+	      lpmec_onerun(dat$Y, obs, estimation_method = "averaging"),
       warning = function(w) {
         if (grepl("More than 50%", conditionMessage(w))) {
           warning_raised <<- TRUE
@@ -94,31 +90,25 @@ test_that("lpmec_onerun warns on excessive missing data", {
 # ==============================================================================
 
 test_that("lpmec_onerun errors on invalid estimation_method", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "invalid_method"),
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "invalid_method"),
     "'estimation_method' must be one of"
   )
 })
 
 test_that("lpmec_onerun errors when custom method lacks function", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "custom"),
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "custom"),
     "'latent_estimation_fn' is required"
   )
 })
 
 test_that("lpmec_onerun errors when latent_estimation_fn is not a function", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "custom", latent_estimation_fn = "not_a_function"),
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "custom", latent_estimation_fn = "not_a_function"),
     "'latent_estimation_fn' must be a function"
   )
 })
@@ -128,11 +118,9 @@ test_that("lpmec_onerun errors when latent_estimation_fn is not a function", {
 # ==============================================================================
 
 test_that("lpmec_onerun errors on invalid ordinal parameter", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "pca", ordinal = "TRUE"),
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "pca", ordinal = "TRUE"),
     "'ordinal' must be a single logical"
   )
 })
@@ -142,44 +130,36 @@ test_that("lpmec_onerun errors on invalid ordinal parameter", {
 # ==============================================================================
 
 test_that("lpmec_onerun errors on invalid mcmc_control backend", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "pca",
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "pca",
                 mcmc_control = list(backend = "invalid_backend")),
     "mcmc_control\\$backend must be either"
   )
 })
 
 test_that("lpmec_onerun errors on invalid mcmc_control n_samples_warmup", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "pca",
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "pca",
                 mcmc_control = list(n_samples_warmup = -1)),
     "n_samples_warmup must be a positive integer"
   )
 })
 
 test_that("lpmec_onerun errors on invalid mcmc_control subsample_method", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "pca",
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "pca",
                  mcmc_control = list(subsample_method = "invalid")),
     "subsample_method must be either"
   )
 })
 
 test_that("lpmec_onerun errors on invalid batch_size for batch mode", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec_onerun(Y, obs, estimation_method = "pca",
+    lpmec_onerun(dat$Y, dat$obs, estimation_method = "pca",
                  mcmc_control = list(subsample_method = "batch", batch_size = 80)),
     "batch_size must be a single numeric value"
   )
@@ -190,83 +170,69 @@ test_that("lpmec_onerun errors on invalid batch_size for batch mode", {
 # ==============================================================================
 
 test_that("lpmec errors on invalid n_boot", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = -1, n_partition = 1, estimation_method = "pca"),
+    lpmec(dat$Y, dat$obs, n_boot = -1, n_partition = 1, estimation_method = "pca"),
     "'n_boot' must be a single non-negative integer"
   )
   expect_error(
-    lpmec(Y, obs, n_boot = 0.5, n_partition = 1, estimation_method = "pca"),
+    lpmec(dat$Y, dat$obs, n_boot = 0.5, n_partition = 1, estimation_method = "pca"),
     "'n_boot' must be a single non-negative integer"
   )
 })
 
 test_that("lpmec errors on invalid n_partition", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 0, estimation_method = "pca"),
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 0, estimation_method = "pca"),
     "'n_partition' must be a single positive integer"
   )
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 1.5, estimation_method = "pca"),
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1.5, estimation_method = "pca"),
     "'n_partition' must be a single positive integer"
   )
 })
 
 test_that("lpmec errors on boot_basis with wrong length", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 1, boot_basis = 1:50,
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, boot_basis = 1:50,
          estimation_method = "pca"),
     "'boot_basis' must have the same length"
   )
 })
 
 test_that("lpmec errors on observables_groupings with wrong length", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, observables_groupings = paste0("g", 1:4),
+    lpmec(dat$Y, dat$obs, observables_groupings = paste0("g", 1:4),
           n_boot = 1, n_partition = 1, estimation_method = "pca"),
     "'observables_groupings' must have length equal to ncol\\(observables\\)"
   )
 })
 
 test_that("lpmec errors on invalid return_intermediaries", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 1, return_intermediaries = "yes",
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, return_intermediaries = "yes",
          estimation_method = "pca"),
     "'return_intermediaries' must be a single logical"
   )
 })
 
 test_that("lpmec errors on invalid partition_aggregation", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
           partition_aggregation = "mean"),
     "'partition_aggregation' must be one of"
   )
 })
 
 test_that("lpmec errors on invalid partition_aggregation_probs", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 1, estimation_method = "pca",
           partition_aggregation = "winsorized_mean",
           partition_aggregation_probs = c(0.99, 0.01)),
     "'partition_aggregation_probs' must be a numeric vector of length 2"
@@ -274,11 +240,9 @@ test_that("lpmec errors on invalid partition_aggregation_probs", {
 })
 
 test_that("lpmec errors when custom partition_aggregation is not scalar numeric", {
-  set.seed(123)
-  Y <- rnorm(80)
-  obs <- as.data.frame(matrix(sample(c(0, 1), 80 * 6, replace = TRUE), ncol = 6))
+  dat <- make_lpmec_test_data()
   expect_error(
-    lpmec(Y, obs, n_boot = 1, n_partition = 2, estimation_method = "pca",
+    lpmec(dat$Y, dat$obs, n_boot = 1, n_partition = 2, estimation_method = "pca",
           partition_aggregation = function(x) c(mean(x), stats::median(x))),
     "'partition_aggregation' must return a single numeric value"
   )
