@@ -160,7 +160,7 @@ We thank [Guilherme Duarte](https://duarteguilherme.github.io/), [Jeff Lewis](ht
 
 # Citation<a id="references"></a>
 [Connor T. Jerzak](https://github.com/cjerzak), [Stephen
-A. Jessee](https://github.com/sjessee). Correcting Bias When Using Latent Regressors. Forthcoming at *Political Analysis* (pending final replication), 2026. [[PDF]](https://arxiv.org/pdf/2507.22218)
+A. Jessee](https://github.com/sjessee). Correcting Bias When Using Latent Regressors. Forthcoming at *Political Analysis*, 2026. [[PDF]](https://arxiv.org/pdf/2507.22218)
 
 ```bibtex
 @article{jerzak2026attenuationbiaslatent,
@@ -168,7 +168,6 @@ A. Jessee](https://github.com/sjessee). Correcting Bias When Using Latent Regres
       author={Jerzak, Connor T. and Jessee, Stephen A.},
       journal={Political Analysis},
       year={2026},
-      note={Forthcoming pending final replication},
       url={https://arxiv.org/abs/2507.22218},
       keywords={latent variables, measurement error, attenuation bias, identification restrictions, method of composition}
 }
